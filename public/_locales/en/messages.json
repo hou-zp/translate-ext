@@ -1,0 +1,9 @@
+{
+  "extName": { "message": "AI Immersive Translate" },
+  "extDescription": {
+    "message": "Bilingual page translation, document translation, selection & hover translation. Supports Google, DeepL, Microsoft, OpenAI-compatible APIs and local Ollama models, with AI experts and AI refine."
+  },
+  "cmdTranslatePage": { "message": "Translate current page / show original" },
+  "cmdToggleHover": { "message": "Toggle hover translation" },
+  "cmdToggleSelection": { "message": "Toggle selection translation" }
+}

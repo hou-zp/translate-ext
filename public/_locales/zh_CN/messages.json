@@ -1,0 +1,9 @@
+{
+  "extName": { "message": "AI 沉浸翻译" },
+  "extDescription": {
+    "message": "整页双语翻译、文档翻译、划词与悬停翻译，支持 Google/DeepL/微软/OpenAI 兼容/Ollama 本地大模型，内置 AI 专家与 AI 精翻。"
+  },
+  "cmdTranslatePage": { "message": "翻译当前页面 / 显示原文" },
+  "cmdToggleHover": { "message": "开关鼠标悬停翻译" },
+  "cmdToggleSelection": { "message": "开关划词翻译" }
+}
