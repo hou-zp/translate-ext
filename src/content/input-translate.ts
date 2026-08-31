@@ -97,6 +97,7 @@ export class InputTranslator {
   private async translateInto(el: EditableTarget, text: string, cfg: AppConfig): Promise<void> {
     this.busyEl = el;
     const original = readValue(el);
+    el.classList.add('txe-input-busy');
     try {
       const res = await sendToBackground('translateBatch', {
         texts: [text],
@@ -108,11 +109,20 @@ export class InputTranslator {
       // only replace if the user hasn't typed anything else meanwhile
       if (out && readValue(el) === original) {
         writeValue(el, stripMarkers(out));
+      } else if (!out) {
+        this.flashError(el);
       }
     } catch {
       // leave the original text untouched on failure
+      this.flashError(el);
     } finally {
+      el.classList.remove('txe-input-busy');
       this.busyEl = null;
     }
+  }
+
+  private flashError(el: EditableTarget): void {
+    el.classList.add('txe-input-error');
+    setTimeout(() => el.classList.remove('txe-input-error'), 800);
   }
 }

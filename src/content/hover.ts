@@ -1,5 +1,6 @@
 import type { AppConfig } from '../core/config';
 import { sendToBackground } from '../core/messaging';
+import { isOverlayHost } from './overlay';
 import { createEntry, type ParagraphRenderer } from './renderer';
 import { collectParagraphs } from './walker';
 
@@ -46,7 +47,7 @@ export class HoverTranslator {
 
     const target = ev.target as Element | null;
     if (!target || !(target instanceof Element)) return;
-    if (target.closest('.txe-t, .txe-sel-panel, .txe-ball, .txe-ball-panel')) return;
+    if (isOverlayHost(target) || target.closest('.txe-t')) return;
     const block = target.closest(BLOCK_SELECTOR);
     if (!block || block === this.lastTarget) return;
     this.lastTarget = block;
@@ -60,6 +61,10 @@ export class HoverTranslator {
     const paragraphs = collectParagraphs(block, cfg.targetLang, this.handled);
     if (paragraphs.length === 0 || paragraphs.length > 4) return;
     this.handled.add(block);
+
+    // brief highlight so the user sees which paragraph is being translated
+    block.classList.add('txe-hover-hint');
+    setTimeout(() => block.classList.remove('txe-hover-hint'), 1200);
 
     const entries = paragraphs.map(createEntry);
     for (const e of entries) this.renderer.showLoading(e);

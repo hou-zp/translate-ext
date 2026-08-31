@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { AppConfig } from '../../src/core/config';
+import { t } from '../../src/core/i18n';
 import { buildAss, parseAss, type AssFile } from '../../src/doc/ass';
 import { docxToMarkdown, parseDocx, type DocxBlock } from '../../src/doc/docx';
 import { parseEpub, type EpubBook } from '../../src/doc/epub';
@@ -26,8 +27,8 @@ export function EpubView(props: { file: File; config: AppConfig }) {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, [props.file]);
 
-  if (error) return <p className="p-10 text-center text-sm text-red-500">{error}</p>;
-  if (!book) return <p className="p-10 text-center text-sm text-gray-400">正在解析 EPUB…</p>;
+  if (error) return <p className="p-10 text-center text-sm text-danger">{error}</p>;
+  if (!book) return <p className="p-10 text-center text-sm text-ink-3">{t('正在解析 EPUB')}…</p>;
 
   const allItems = book.chapters.flatMap((ch, ci) =>
     ch.paragraphs.map((text, pi) => ({ key: `${ci}-${pi}`, text })),
@@ -49,8 +50,8 @@ export function EpubView(props: { file: File; config: AppConfig }) {
   return (
     <div className="flex gap-5">
       <aside className="w-56 shrink-0">
-        <div className="sticky top-6 max-h-[calc(100vh-60px)] overflow-auto rounded-xl bg-white p-3 shadow-sm">
-          <h2 className="mb-2 line-clamp-2 px-2 text-sm font-semibold text-gray-800">
+        <div className="sticky top-6 max-h-[calc(100vh-60px)] overflow-auto rounded-xl border border-line/70 bg-card p-3 shadow-card">
+          <h2 className="mb-2 line-clamp-2 px-2 text-sm font-semibold text-ink">
             {book.title}
           </h2>
           {book.chapters.map((ch, i) => (
@@ -59,7 +60,7 @@ export function EpubView(props: { file: File; config: AppConfig }) {
               type="button"
               onClick={() => setChapterIdx(i)}
               className={`block w-full truncate rounded-lg px-2 py-1.5 text-left text-xs ${
-                i === chapterIdx ? 'bg-brand/10 text-brand' : 'text-gray-600 hover:bg-gray-50'
+                i === chapterIdx ? 'bg-brand-soft text-brand' : 'text-ink-2 hover:bg-fill'
               }`}
             >
               {ch.title}
@@ -68,21 +69,21 @@ export function EpubView(props: { file: File; config: AppConfig }) {
         </div>
       </aside>
       <div className="min-w-0 flex-1">
-        <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
-          <span className="text-sm text-gray-600">
-            {book.chapters.length} 章 · {allItems.length} 段
+        <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+          <span className="text-sm text-ink-2">
+            {book.chapters.length} {t('章')} · {allItems.length} {t('段')}
           </span>
           {!progress.running ? (
             <ToolButton primary onClick={() => void start(allItems)}>
-              {progress.done > 0 ? '重新翻译' : '翻译全书'}
+              {progress.done > 0 ? t('重新翻译') : t('翻译全书')}
             </ToolButton>
           ) : (
-            <ToolButton onClick={cancel}>停止</ToolButton>
+            <ToolButton onClick={cancel}>{t('停止')}</ToolButton>
           )}
-          <ToolButton onClick={exportMd}>导出 Markdown</ToolButton>
+          <ToolButton onClick={exportMd}>{t('导出 Markdown')}</ToolButton>
           <ProgressBar progress={progress} />
         </div>
-        <h3 className="mb-3 text-lg font-semibold text-gray-800">{chapter.title}</h3>
+        <h3 className="mb-3 text-lg font-semibold text-ink">{chapter.title}</h3>
         <BilingualList
           paragraphs={chapter.paragraphs.map((text, pi) => ({
             key: `${chapterIdx}-${pi}`,
@@ -107,20 +108,22 @@ export function TxtView(props: { file: File; config: AppConfig }) {
     void props.file.text().then((text) => setParagraphs(parseTxt(text)));
   }, [props.file]);
 
-  if (!paragraphs) return <p className="p-10 text-center text-sm text-gray-400">正在读取…</p>;
+  if (!paragraphs) return <p className="p-10 text-center text-sm text-ink-3">{t('正在读取')}…</p>;
 
   const items = paragraphs.map((text, i) => ({ key: String(i), text }));
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
-        <span className="text-sm text-gray-600">{items.length} 段</span>
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+        <span className="text-sm text-ink-2">
+          {items.length} {t('段')}
+        </span>
         {!progress.running ? (
           <ToolButton primary onClick={() => void start(items)}>
-            {progress.done > 0 ? '重新翻译' : '开始翻译'}
+            {progress.done > 0 ? t('重新翻译') : t('开始翻译')}
           </ToolButton>
         ) : (
-          <ToolButton onClick={cancel}>停止</ToolButton>
+          <ToolButton onClick={cancel}>{t('停止')}</ToolButton>
         )}
         <ToolButton
           onClick={() =>
@@ -130,7 +133,7 @@ export function TxtView(props: { file: File; config: AppConfig }) {
             )
           }
         >
-          导出 TXT
+          {t('导出 TXT')}
         </ToolButton>
         <ProgressBar progress={progress} />
       </div>
@@ -163,10 +166,15 @@ export function DocxView(props: { file: File; config: AppConfig }) {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, [props.file]);
 
-  if (error) return <p className="p-10 text-center text-sm text-red-500">解析失败：{error}</p>;
-  if (!blocks) return <p className="p-10 text-center text-sm text-gray-400">正在解析 DOCX…</p>;
+  if (error)
+    return (
+      <p className="p-10 text-center text-sm text-danger">
+        {t('解析失败')}：{error}
+      </p>
+    );
+  if (!blocks) return <p className="p-10 text-center text-sm text-ink-3">{t('正在解析 DOCX')}…</p>;
   if (blocks.length === 0)
-    return <p className="p-10 text-center text-sm text-red-500">文档中没有可翻译的文本</p>;
+    return <p className="p-10 text-center text-sm text-danger">{t('文档中没有可翻译的文本')}</p>;
 
   const items = blocks.map((b, i) => ({ key: String(i), text: b.text }));
 
@@ -181,32 +189,34 @@ export function DocxView(props: { file: File; config: AppConfig }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
-        <span className="text-sm text-gray-600">{items.length} 段</span>
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+        <span className="text-sm text-ink-2">
+          {items.length} {t('段')}
+        </span>
         {!progress.running ? (
           <ToolButton primary onClick={() => void start(items)}>
-            {progress.done > 0 ? '重新翻译' : '开始翻译'}
+            {progress.done > 0 ? t('重新翻译') : t('开始翻译')}
           </ToolButton>
         ) : (
-          <ToolButton onClick={cancel}>停止</ToolButton>
+          <ToolButton onClick={cancel}>{t('停止')}</ToolButton>
         )}
-        <label className="flex items-center gap-1.5 text-sm text-gray-600">
+        <label className="flex items-center gap-1.5 text-sm text-ink-2">
           <input
             type="checkbox"
             checked={bilingual}
             onChange={(e) => setBilingual(e.target.checked)}
           />
-          导出双语
+          {t('导出双语')}
         </label>
-        <ToolButton onClick={exportMd}>导出 Markdown</ToolButton>
+        <ToolButton onClick={exportMd}>{t('导出 Markdown')}</ToolButton>
         <ProgressBar progress={progress} />
       </div>
       <div className="space-y-3">
         {blocks.map((b, i) => (
-          <div key={i} className="rounded-xl bg-white px-4 py-3 shadow-sm">
-            <p className={`text-gray-500 ${HEADING_CLS[b.tag] ?? 'text-sm'}`}>{b.text}</p>
-            <p className={`mt-1 text-gray-900 ${HEADING_CLS[b.tag] ?? 'text-sm'}`}>
-              {results[String(i)] ?? <span className="text-gray-300">待翻译…</span>}
+          <div key={i} className="rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+            <p className={`text-ink-2 ${HEADING_CLS[b.tag] ?? 'text-sm'}`}>{b.text}</p>
+            <p className={`mt-1 text-ink ${HEADING_CLS[b.tag] ?? 'text-sm'}`}>
+              {results[String(i)] ?? <span className="text-ink-3">{t('待翻译')}…</span>}
             </p>
           </div>
         ))}
@@ -228,9 +238,9 @@ export function AssView(props: { file: File; config: AppConfig }) {
     void props.file.text().then((text) => setAss(parseAss(text)));
   }, [props.file]);
 
-  if (!ass) return <p className="p-10 text-center text-sm text-gray-400">正在解析字幕…</p>;
+  if (!ass) return <p className="p-10 text-center text-sm text-ink-3">{t('正在解析字幕')}…</p>;
   if (ass.cues.length === 0)
-    return <p className="p-10 text-center text-sm text-red-500">未解析到有效字幕条目</p>;
+    return <p className="p-10 text-center text-sm text-danger">{t('未解析到有效字幕条目')}</p>;
 
   const items = ass.cues.map((cue, i) => ({ key: String(i), text: cue.text.replace(/\n/g, ' ') }));
 
@@ -244,35 +254,37 @@ export function AssView(props: { file: File; config: AppConfig }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
-        <span className="text-sm text-gray-600">{ass.cues.length} 条字幕</span>
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+        <span className="text-sm text-ink-2">
+          {ass.cues.length} {t('条字幕')}
+        </span>
         {!progress.running ? (
           <ToolButton primary onClick={() => void start(items)}>
-            {progress.done > 0 ? '重新翻译' : '开始翻译'}
+            {progress.done > 0 ? t('重新翻译') : t('开始翻译')}
           </ToolButton>
         ) : (
-          <ToolButton onClick={cancel}>停止</ToolButton>
+          <ToolButton onClick={cancel}>{t('停止')}</ToolButton>
         )}
-        <label className="flex items-center gap-1.5 text-sm text-gray-600">
+        <label className="flex items-center gap-1.5 text-sm text-ink-2">
           <input
             type="checkbox"
             checked={bilingual}
             onChange={(e) => setBilingual(e.target.checked)}
           />
-          导出双语字幕
+          {t('导出双语字幕')}
         </label>
-        <ToolButton onClick={exportAss}>导出 ASS</ToolButton>
+        <ToolButton onClick={exportAss}>{t('导出 ASS')}</ToolButton>
         <ProgressBar progress={progress} />
       </div>
       <div className="space-y-2">
         {ass.cues.map((cue, i) => (
-          <div key={i} className="rounded-xl bg-white px-4 py-3 shadow-sm">
-            <div className="mb-1 text-xs text-gray-400">
+          <div key={i} className="rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+            <div className="mb-1 text-xs text-ink-3">
               #{i + 1} · {cue.start} → {cue.end}
             </div>
-            <p className="text-sm text-gray-500">{cue.text}</p>
-            <p className="mt-1 text-sm text-gray-900">
-              {results[String(i)] ?? <span className="text-gray-300">待翻译…</span>}
+            <p className="text-sm text-ink-2">{cue.text}</p>
+            <p className="mt-1 text-sm text-ink">
+              {results[String(i)] ?? <span className="text-ink-3">{t('待翻译')}…</span>}
             </p>
           </div>
         ))}
@@ -294,9 +306,9 @@ export function SrtView(props: { file: File; config: AppConfig }) {
     void props.file.text().then((text) => setCues(parseSrt(text)));
   }, [props.file]);
 
-  if (!cues) return <p className="p-10 text-center text-sm text-gray-400">正在解析字幕…</p>;
+  if (!cues) return <p className="p-10 text-center text-sm text-ink-3">{t('正在解析字幕')}…</p>;
   if (cues.length === 0)
-    return <p className="p-10 text-center text-sm text-red-500">未解析到有效字幕条目</p>;
+    return <p className="p-10 text-center text-sm text-danger">{t('未解析到有效字幕条目')}</p>;
 
   const items = cues.map((cue, i) => ({ key: String(i), text: cue.text.replace(/\n/g, ' ') }));
 
@@ -310,35 +322,37 @@ export function SrtView(props: { file: File; config: AppConfig }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
-        <span className="text-sm text-gray-600">{cues.length} 条字幕</span>
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+        <span className="text-sm text-ink-2">
+          {cues.length} {t('条字幕')}
+        </span>
         {!progress.running ? (
           <ToolButton primary onClick={() => void start(items)}>
-            {progress.done > 0 ? '重新翻译' : '开始翻译'}
+            {progress.done > 0 ? t('重新翻译') : t('开始翻译')}
           </ToolButton>
         ) : (
-          <ToolButton onClick={cancel}>停止</ToolButton>
+          <ToolButton onClick={cancel}>{t('停止')}</ToolButton>
         )}
-        <label className="flex items-center gap-1.5 text-sm text-gray-600">
+        <label className="flex items-center gap-1.5 text-sm text-ink-2">
           <input
             type="checkbox"
             checked={bilingual}
             onChange={(e) => setBilingual(e.target.checked)}
           />
-          导出双语字幕
+          {t('导出双语字幕')}
         </label>
-        <ToolButton onClick={exportSrt}>导出 SRT</ToolButton>
+        <ToolButton onClick={exportSrt}>{t('导出 SRT')}</ToolButton>
         <ProgressBar progress={progress} />
       </div>
       <div className="space-y-2">
         {cues.map((cue, i) => (
-          <div key={i} className="rounded-xl bg-white px-4 py-3 shadow-sm">
-            <div className="mb-1 text-xs text-gray-400">
+          <div key={i} className="rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+            <div className="mb-1 text-xs text-ink-3">
               #{i + 1} · {cue.time}
             </div>
-            <p className="text-sm text-gray-500">{cue.text}</p>
-            <p className="mt-1 text-sm text-gray-900">
-              {results[String(i)] ?? <span className="text-gray-300">待翻译…</span>}
+            <p className="text-sm text-ink-2">{cue.text}</p>
+            <p className="mt-1 text-sm text-ink">
+              {results[String(i)] ?? <span className="text-ink-3">{t('待翻译')}…</span>}
             </p>
           </div>
         ))}

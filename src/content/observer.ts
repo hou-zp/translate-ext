@@ -15,12 +15,13 @@ export class DynamicWatcher {
         for (const node of m.addedNodes) {
           if (node.nodeType === Node.ELEMENT_NODE) {
             const el = node as Element;
-            if (el.closest('.txe-t, .txe-sel-panel, .txe-ball, .txe-ball-panel')) continue;
+            if (el.closest('.txe-t, .txe-manga-box') || el.hasAttribute('data-txe-overlay'))
+              continue;
             if (el.classList?.contains('txe-loading') || el.classList?.contains('txe-error')) continue;
             this.pendingRoots.add(el);
           } else if (node.nodeType === Node.TEXT_NODE && node.parentElement) {
             const parent = node.parentElement;
-            if (!parent.closest('.txe-t, .txe-sel-panel, .txe-ball, .txe-ball-panel')) {
+            if (!parent.closest('.txe-t, .txe-manga-box')) {
               this.pendingRoots.add(parent);
             }
           }

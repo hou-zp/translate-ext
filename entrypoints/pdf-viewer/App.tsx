@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react';
+import { FileUp } from 'lucide-react';
 import { Select } from '../../src/components/ui';
 import { useConfig } from '../../src/components/useConfig';
+import { t } from '../../src/core/i18n';
 import { LANGS } from '../../src/core/langs';
 import { allExperts } from '../../src/core/prompts';
 import { PROVIDER_LIST } from '../../src/providers';
@@ -45,7 +47,7 @@ export default function App() {
     <div className="mx-auto min-h-screen max-w-6xl px-6 py-6">
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold text-gray-800">文档翻译</h1>
+          <h1 className="text-xl font-bold text-ink">{t('文档翻译')}</h1>
           {file && (
             <button
               type="button"
@@ -55,50 +57,52 @@ export default function App() {
                 setKind(null);
               }}
             >
-              换一个文件
+              {t('换一个文件')}
             </button>
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-          <span className="rounded-lg bg-white px-3 py-1.5 shadow-sm">
-            <Select
-              value={config.sourceLang}
-              onChange={(v) => update({ sourceLang: v })}
-              options={LANGS.map((l) => ({ value: l.code, label: l.label }))}
-            />
-          </span>
-          →
-          <span className="rounded-lg bg-white px-3 py-1.5 shadow-sm">
-            <Select
-              value={config.targetLang}
-              onChange={(v) => update({ targetLang: v })}
-              options={LANGS.filter((l) => l.code !== 'auto').map((l) => ({
-                value: l.code,
-                label: l.label,
-              }))}
-            />
-          </span>
-          <span className="rounded-lg bg-white px-3 py-1.5 shadow-sm">
-            <Select
-              value={config.provider}
-              onChange={(v) => update({ provider: v as typeof config.provider })}
-              options={PROVIDER_LIST.map((p) => ({ value: p.id, label: p.name }))}
-            />
-          </span>
-          <span className="rounded-lg bg-white px-3 py-1.5 shadow-sm">
-            <Select
-              value={config.expertId}
-              onChange={(v) => update({ expertId: v })}
-              options={allExperts(config).map((e) => ({ value: e.id, label: e.name }))}
-            />
-          </span>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-ink-2">
+          <Select
+            variant="field"
+            className="w-40"
+            value={config.sourceLang}
+            onChange={(v) => update({ sourceLang: v })}
+            options={LANGS.map((l) => ({ value: l.code, label: l.label }))}
+          />
+          <span className="text-ink-3">→</span>
+          <Select
+            variant="field"
+            className="w-40"
+            value={config.targetLang}
+            onChange={(v) => update({ targetLang: v })}
+            options={LANGS.filter((l) => l.code !== 'auto').map((l) => ({
+              value: l.code,
+              label: l.label,
+            }))}
+          />
+          <Select
+            variant="field"
+            className="w-36"
+            value={config.provider}
+            onChange={(v) => update({ provider: v as typeof config.provider })}
+            options={PROVIDER_LIST.map((p) => ({ value: p.id, label: p.name }))}
+          />
+          <Select
+            variant="field"
+            className="w-32"
+            value={config.expertId}
+            onChange={(v) => update({ expertId: v })}
+            options={allExperts(config).map((e) => ({ value: e.id, label: e.name }))}
+          />
         </div>
       </header>
 
       {!file && (
         <label
-          className={`flex h-[420px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed transition-colors ${
-            dragOver ? 'border-brand bg-blue-50/60' : 'border-gray-300 bg-white hover:border-brand/60'
+          className={`flex h-[420px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed transition-all duration-200 ${
+            dragOver
+              ? 'scale-[1.01] border-brand bg-brand-soft/60'
+              : 'border-line-strong bg-card hover:border-brand/60'
           }`}
           onDragOver={(e) => {
             e.preventDefault();
@@ -111,13 +115,18 @@ export default function App() {
             acceptFile(e.dataTransfer.files?.[0]);
           }}
         >
-          <svg viewBox="0 0 24 24" className="mb-4 h-14 w-14 text-brand/70" fill="none" stroke="currentColor" strokeWidth="1.2">
-            <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M12 12v6M9 15l3-3 3 3" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <p className="mb-1 text-lg font-medium text-gray-700">拖拽文件到这里，或点击选择</p>
-          <p className="text-sm text-gray-400">支持 PDF / EPUB / DOCX / TXT / Markdown / SRT / ASS 字幕</p>
-          <p className="mt-2 text-xs text-gray-300">文件在本地解析，不会被上传</p>
-          {rejected && <p className="mt-3 text-sm text-red-500">暂不支持该文件格式</p>}
+          <FileUp
+            className={`mb-4 h-14 w-14 transition-transform duration-200 ${
+              dragOver ? 'scale-110 text-brand' : 'text-brand/70'
+            }`}
+            strokeWidth={1.2}
+          />
+          <p className="mb-1 text-lg font-medium text-ink">{t('拖拽文件到这里，或点击选择')}</p>
+          <p className="text-sm text-ink-3">
+            {t('支持 PDF / EPUB / DOCX / TXT / Markdown / SRT / ASS 字幕')}
+          </p>
+          <p className="mt-2 text-xs text-ink-3/70">{t('文件在本地解析，不会被上传')}</p>
+          {rejected && <p className="mt-3 text-sm text-danger">{t('暂不支持该文件格式')}</p>}
           <input
             type="file"
             className="hidden"

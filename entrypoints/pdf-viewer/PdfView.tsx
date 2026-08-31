@@ -9,6 +9,7 @@ import {
   renderPageToCanvas,
   type PdfPageData,
 } from '../../src/doc/pdf';
+import { t } from '../../src/core/i18n';
 import { useDocTranslator } from './useDocTranslator';
 import { ProgressBar, ToolButton } from './shared';
 
@@ -63,7 +64,7 @@ function PdfPageCanvas(props: {
           return (
             <div
               key={key}
-              className="absolute overflow-hidden bg-white/95 leading-snug text-gray-900"
+              className="absolute overflow-hidden bg-white/95 leading-snug text-[#111827]"
               style={{
                 left: `${para.left * 100}%`,
                 top: `${para.top * 100}%`,
@@ -212,30 +213,36 @@ ${body}
   };
 
   if (parseError) {
-    return <p className="p-10 text-center text-sm text-red-500">PDF 解析失败：{parseError}</p>;
+    return (
+      <p className="p-10 text-center text-sm text-danger">
+        {t('PDF 解析失败')}：{parseError}
+      </p>
+    );
   }
   if (!doc || pages.length === 0) {
-    return <p className="p-10 text-center text-sm text-gray-400">正在解析 PDF…</p>;
+    return <p className="p-10 text-center text-sm text-ink-3">{t('正在解析 PDF')}…</p>;
   }
 
   return (
     <div>
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
-        <span className="text-sm text-gray-600">
-          共 {doc.numPages} 页 · {allItems.length} 段
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+        <span className="text-sm text-ink-2">
+          {t('共')} {doc.numPages} {t('页')} · {allItems.length} {t('段')}
         </span>
-        <div className="flex overflow-hidden rounded-lg border border-gray-200 text-sm">
+        <div className="flex rounded-lg bg-fill p-0.5 text-sm">
           {(
             [
-              ['side', '对照模式'],
-              ['overlay', '叠加模式'],
+              ['side', t('对照模式')],
+              ['overlay', t('叠加模式')],
             ] as const
           ).map(([v, label]) => (
             <button
               key={v}
               type="button"
               onClick={() => setMode(v)}
-              className={`px-3 py-1.5 ${mode === v ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={`rounded-md px-3 py-1 transition-all duration-150 ${
+                mode === v ? 'bg-card text-ink shadow-sm' : 'text-ink-2 hover:text-ink'
+              }`}
             >
               {label}
             </button>
@@ -243,15 +250,15 @@ ${body}
         </div>
         {!progress.running ? (
           <ToolButton primary onClick={() => void start(allItems)}>
-            {progress.done > 0 ? '重新翻译' : '开始翻译'}
+            {progress.done > 0 ? t('重新翻译') : t('开始翻译')}
           </ToolButton>
         ) : (
-          <ToolButton onClick={cancel}>停止</ToolButton>
+          <ToolButton onClick={cancel}>{t('停止')}</ToolButton>
         )}
         {scannedPages.length > 0 &&
           (!ocrState.running ? (
             <ToolButton onClick={() => void runOcr()}>
-              OCR 翻译扫描页（{scannedPages.length}）
+              {t('OCR 翻译扫描页')}（{scannedPages.length}）
             </ToolButton>
           ) : (
             <ToolButton
@@ -259,15 +266,17 @@ ${body}
                 ocrCancel.current = true;
               }}
             >
-              停止 OCR（{ocrState.done}/{scannedPages.length}）
+              {t('停止 OCR')}（{ocrState.done}/{scannedPages.length}）
             </ToolButton>
           ))}
-        <ToolButton onClick={() => exportText(false)}>导出 TXT</ToolButton>
-        <ToolButton onClick={() => exportText(true)}>导出 Markdown</ToolButton>
-        <ToolButton onClick={exportHtml}>导出双语 HTML</ToolButton>
+        <ToolButton onClick={() => exportText(false)}>{t('导出 TXT')}</ToolButton>
+        <ToolButton onClick={() => exportText(true)}>{t('导出 Markdown')}</ToolButton>
+        <ToolButton onClick={exportHtml}>{t('导出双语 HTML')}</ToolButton>
         <ProgressBar progress={progress} />
         {ocrState.error && (
-          <span className="text-xs text-red-500">OCR 失败：{ocrState.error}（需要多模态模型）</span>
+          <span className="text-xs text-danger">
+            {t('OCR 失败')}：{ocrState.error}（{t('需要多模态模型')}）
+          </span>
         )}
       </div>
 
@@ -287,7 +296,7 @@ ${body}
 
         {mode === 'side' && (
           <aside className="w-[420px] shrink-0">
-            <div className="sticky top-20 max-h-[calc(100vh-120px)] overflow-auto rounded-xl bg-white p-4 shadow-sm">
+            <div className="sticky top-20 max-h-[calc(100vh-120px)] overflow-auto rounded-xl border border-line/70 bg-card p-4 shadow-card">
               {pages.map((page) => (
                 <div key={page.pageIndex} className="mb-4">
                   <button
@@ -300,24 +309,25 @@ ${body}
                       })
                     }
                   >
-                    第 {page.pageIndex + 1} 页
+                    {t('第')} {page.pageIndex + 1} {t('页')}
                   </button>
                   {page.paragraphs.map((para, i) => {
                     const tr = results[`${page.pageIndex}-${i}`];
                     return (
                       <p
                         key={i}
-                        className="mb-2 border-b border-gray-50 pb-2 text-sm leading-6 text-gray-800"
+                        className="mb-2 border-b border-line/50 pb-2 text-sm leading-6 text-ink"
                       >
-                        {tr ?? <span className="text-gray-300">{para.text}</span>}
+                        {tr ?? <span className="text-ink-3">{para.text}</span>}
                       </p>
                     );
                   })}
                   {page.paragraphs.length === 0 && (
-                    <p className="mb-2 whitespace-pre-wrap border-b border-gray-50 pb-2 text-sm leading-6 text-gray-800">
+                    <p className="mb-2 whitespace-pre-wrap border-b border-line/50 pb-2 text-sm leading-6 text-ink">
                       {ocrResults[page.pageIndex] ?? (
-                        <span className="text-gray-300">
-                          扫描页，无文本层{scannedPages.length > 0 ? '，可用 OCR 翻译' : ''}
+                        <span className="text-ink-3">
+                          {t('扫描页，无文本层')}
+                          {scannedPages.length > 0 ? t('，可用 OCR 翻译') : ''}
                         </span>
                       )}
                     </p>

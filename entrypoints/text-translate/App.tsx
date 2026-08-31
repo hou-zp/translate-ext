@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { browser } from 'wxt/browser';
-import { Select, useToast } from '../../src/components/ui';
+import { ArrowRightLeft, Copy, Eraser, History, Volume2, X } from 'lucide-react';
+import { Button, Select, useToast } from '../../src/components/ui';
 import { useConfig } from '../../src/components/useConfig';
+import { t } from '../../src/core/i18n';
 import { LANGS, langLabel } from '../../src/core/langs';
 import { streamTranslate } from '../../src/core/messaging';
 import { allExperts } from '../../src/core/prompts';
@@ -29,6 +31,23 @@ async function pushHistory(item: HistoryItem): Promise<HistoryItem[]> {
   const list = [item, ...(await loadHistory())].slice(0, HISTORY_MAX);
   await browser.storage.local.set({ [HISTORY_KEY]: list });
   return list;
+}
+
+function PaneAction(props: {
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      title={props.title}
+      onClick={props.onClick}
+      className="rounded-md p-1.5 text-ink-3 transition-colors hover:bg-fill hover:text-ink"
+    >
+      {props.children}
+    </button>
+  );
 }
 
 export default function App() {
@@ -145,8 +164,8 @@ export default function App() {
     setResult(source);
   };
 
-  const copyResult = () => {
-    void navigator.clipboard.writeText(result).then(() => toast('已复制', 'success'));
+  const copyText = (text: string) => {
+    void navigator.clipboard.writeText(text).then(() => toast(t('已复制'), 'success'));
   };
 
   const speak = (text: string, lang: string) => {
@@ -158,224 +177,237 @@ export default function App() {
 
   if (!config) return null;
 
+  const paneCls = 'rounded-2xl border border-line/70 bg-card p-4 shadow-card';
+
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-6 py-8">
-      <header className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-800">文本翻译</h1>
-        <div className="flex items-center gap-4 text-sm">
-          <label className="flex items-center gap-2 text-gray-600">
-            翻译服务
-            <span className="rounded-lg bg-white px-3 py-1.5 shadow-sm">
-              <Select
-                value={config.provider}
-                onChange={(v) => update({ provider: v as typeof config.provider })}
-                options={PROVIDER_LIST.map((p) => ({ value: p.id, label: p.name }))}
-              />
-            </span>
-          </label>
-          <label className="flex items-center gap-2 text-gray-600">
-            AI 专家
-            <span className="rounded-lg bg-white px-3 py-1.5 shadow-sm">
-              <Select
-                value={config.expertId}
-                onChange={(v) => update({ expertId: v })}
-                options={allExperts(config).map((e) => ({ value: e.id, label: e.name }))}
-              />
-            </span>
-          </label>
-          <button
-            type="button"
+      {/* toolbar */}
+      <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-ink">{t('文本翻译')}</h1>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <Select
+            variant="field"
+            className="w-36"
+            value={config.provider}
+            onChange={(v) => update({ provider: v as typeof config.provider })}
+            options={PROVIDER_LIST.map((p) => ({ value: p.id, label: p.name }))}
+          />
+          <Select
+            variant="field"
+            className="w-32"
+            value={config.expertId}
+            onChange={(v) => update({ expertId: v })}
+            options={allExperts(config).map((e) => ({ value: e.id, label: e.name }))}
+          />
+          <Button
+            variant={compareOn ? 'primary' : 'secondary'}
             onClick={() => {
               setCompareOn((v) => !v);
               if (!compareOn && source.trim()) doCompareTranslate(source.trim());
             }}
-            className={`rounded-lg px-3 py-1.5 shadow-sm ${compareOn ? 'bg-brand text-white' : 'bg-white text-gray-600'}`}
           >
-            双引擎对比
-          </button>
+            {t('双引擎对比')}
+          </Button>
           {compareOn && (
-            <span className="rounded-lg bg-white px-3 py-1.5 shadow-sm">
-              <Select
-                value={effectiveCompare}
-                onChange={(v) => {
-                  setCompareProvider(v);
-                  setCompareResult('');
-                }}
-                options={PROVIDER_LIST.map((p) => ({ value: p.id, label: p.name }))}
-              />
-            </span>
+            <Select
+              variant="field"
+              className="w-36"
+              value={effectiveCompare}
+              onChange={(v) => {
+                setCompareProvider(v);
+                setCompareResult('');
+              }}
+              options={PROVIDER_LIST.map((p) => ({ value: p.id, label: p.name }))}
+            />
           )}
-          <button
-            type="button"
+          <Button
+            variant={showHistory ? 'primary' : 'secondary'}
+            icon={<History className="h-4 w-4" />}
             onClick={() => setShowHistory((v) => !v)}
-            className={`rounded-lg px-3 py-1.5 shadow-sm ${showHistory ? 'bg-brand text-white' : 'bg-white text-gray-600'}`}
           >
-            历史记录
-          </button>
+            {t('历史记录')}
+          </Button>
         </div>
       </header>
 
-      <div className="mb-3 flex items-center justify-center gap-3">
-        <span className="rounded-lg bg-white px-4 py-2 shadow-sm">
-          <Select
-            value={config.sourceLang}
-            onChange={(v) => update({ sourceLang: v })}
-            options={LANGS.map((l) => ({ value: l.code, label: l.label }))}
-          />
-        </span>
+      {/* language pair */}
+      <div className="mb-4 flex items-center justify-center gap-3">
+        <Select
+          variant="field"
+          className="w-44"
+          value={config.sourceLang}
+          onChange={(v) => update({ sourceLang: v })}
+          options={LANGS.map((l) => ({ value: l.code, label: l.label }))}
+        />
         <button
           type="button"
           onClick={swap}
           disabled={config.sourceLang === 'auto'}
-          title="互换语言"
-          className="rounded-full bg-white p-2 text-gray-500 shadow-sm hover:text-brand disabled:opacity-40"
+          title={t('互换语言')}
+          className="rounded-full border border-line bg-card p-2 text-ink-3 shadow-sm transition-colors hover:text-brand disabled:opacity-40"
         >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M7 16l-4-4 4-4M3 12h18M17 8l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <ArrowRightLeft className="h-4 w-4" />
         </button>
-        <span className="rounded-lg bg-white px-4 py-2 shadow-sm">
-          <Select
-            value={config.targetLang}
-            onChange={(v) => update({ targetLang: v })}
-            options={LANGS.filter((l) => l.code !== 'auto').map((l) => ({
-              value: l.code,
-              label: l.label,
-            }))}
-          />
-        </span>
+        <Select
+          variant="field"
+          className="w-44"
+          value={config.targetLang}
+          onChange={(v) => update({ targetLang: v })}
+          options={LANGS.filter((l) => l.code !== 'auto').map((l) => ({
+            value: l.code,
+            label: l.label,
+          }))}
+        />
       </div>
 
+      {/* panes */}
       <div className={`grid gap-4 ${compareOn ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
+        <div className={paneCls}>
           <textarea
             value={source}
             onChange={(e) => onSourceChange(e.target.value)}
-            placeholder="输入要翻译的文本…"
-            className="h-64 w-full resize-none text-[15px] leading-7 text-gray-800 outline-none"
+            placeholder={t('输入要翻译的文本') + '…'}
+            className="h-64 w-full resize-none bg-transparent text-[15px] leading-7 text-ink outline-none placeholder:text-ink-3"
           />
-          <div className="flex items-center justify-between border-t border-gray-100 pt-2 text-xs text-gray-400">
-            <span>{source.length} 字符</span>
-            <div className="flex gap-2">
-              <button type="button" className="hover:text-gray-700" onClick={() => speak(source, config.sourceLang)}>
-                朗读
-              </button>
-              <button
-                type="button"
-                className="hover:text-gray-700"
+          <div className="flex items-center justify-between border-t border-line/70 pt-2 text-xs text-ink-3">
+            <span className="tabular-nums">
+              {source.length} {t('字符')}
+            </span>
+            <div className="flex gap-0.5">
+              <PaneAction title={t('朗读')} onClick={() => speak(source, config.sourceLang)}>
+                <Volume2 className="h-3.5 w-3.5" />
+              </PaneAction>
+              <PaneAction
+                title={t('清空')}
                 onClick={() => {
                   setSource('');
                   setResult('');
+                  setCompareResult('');
                 }}
               >
-                清空
-              </button>
+                <Eraser className="h-3.5 w-3.5" />
+              </PaneAction>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <div className="h-64 w-full overflow-auto whitespace-pre-wrap text-[15px] leading-7 text-gray-800">
+        <div className={paneCls}>
+          <div className="h-64 w-full overflow-auto whitespace-pre-wrap text-[15px] leading-7 text-ink">
             {result || (
-              <span className="text-gray-300">
-                {translating ? '翻译中…' : '译文将显示在这里'}
+              <span className="text-ink-3">
+                {translating ? t('翻译中') + '…' : t('译文将显示在这里')}
               </span>
             )}
             {translating && result && <span className="animate-pulse text-brand">▍</span>}
           </div>
-          <div className="flex items-center justify-between border-t border-gray-100 pt-2 text-xs text-gray-400">
+          <div className="flex items-center justify-between border-t border-line/70 pt-2 text-xs text-ink-3">
             <span>
               {compareOn
                 ? (PROVIDER_LIST.find((p) => p.id === config.provider)?.name ?? config.provider)
                 : langLabel(config.targetLang)}
             </span>
-            <div className="flex gap-2">
-              <button type="button" className="hover:text-gray-700" onClick={() => speak(result, config.targetLang)}>
-                朗读
-              </button>
-              <button type="button" className="hover:text-gray-700" onClick={copyResult}>
-                复制
-              </button>
+            <div className="flex gap-0.5">
+              <PaneAction title={t('朗读')} onClick={() => speak(result, config.targetLang)}>
+                <Volume2 className="h-3.5 w-3.5" />
+              </PaneAction>
+              <PaneAction title={t('复制')} onClick={() => copyText(result)}>
+                <Copy className="h-3.5 w-3.5" />
+              </PaneAction>
             </div>
           </div>
         </div>
 
         {compareOn && (
-          <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-brand/15">
-            <div className="h-64 w-full overflow-auto whitespace-pre-wrap text-[15px] leading-7 text-gray-800">
+          <div className={`${paneCls} ring-1 ring-brand/15`}>
+            <div className="h-64 w-full overflow-auto whitespace-pre-wrap text-[15px] leading-7 text-ink">
               {compareResult || (
-                <span className="text-gray-300">
-                  {compareTranslating ? '翻译中…' : '对比译文将显示在这里'}
+                <span className="text-ink-3">
+                  {compareTranslating ? t('翻译中') + '…' : t('对比译文将显示在这里')}
                 </span>
               )}
               {compareTranslating && compareResult && (
                 <span className="animate-pulse text-brand">▍</span>
               )}
             </div>
-            <div className="flex items-center justify-between border-t border-gray-100 pt-2 text-xs text-gray-400">
+            <div className="flex items-center justify-between border-t border-line/70 pt-2 text-xs text-ink-3">
               <span>
                 {PROVIDER_LIST.find((p) => p.id === effectiveCompare)?.name ?? effectiveCompare}
               </span>
-              <button
-                type="button"
-                className="hover:text-gray-700"
-                onClick={() =>
-                  void navigator.clipboard
-                    .writeText(compareResult)
-                    .then(() => toast('已复制', 'success'))
-                }
-              >
-                复制
-              </button>
+              <PaneAction title={t('复制')} onClick={() => copyText(compareResult)}>
+                <Copy className="h-3.5 w-3.5" />
+              </PaneAction>
             </div>
           </div>
         )}
       </div>
 
       <div className="mt-4 flex justify-center">
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          className="px-10"
           disabled={translating || !source.trim()}
+          loading={translating}
           onClick={() => doTranslate(source)}
-          className="rounded-xl bg-brand px-10 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-brand-dark disabled:opacity-50"
         >
-          {translating ? '翻译中…' : '翻译'}
-        </button>
+          {translating ? t('翻译中') + '…' : t('翻译')}
+        </Button>
       </div>
 
+      {/* history drawer */}
       {showHistory && (
-        <div className="mt-8">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-medium text-gray-600">最近 {history.length} 条记录</h2>
-            <button
-              type="button"
-              className="text-xs text-gray-400 hover:text-red-500"
-              onClick={async () => {
-                await browser.storage.local.remove(HISTORY_KEY);
-                setHistory([]);
-              }}
-            >
-              清空历史
-            </button>
-          </div>
-          <div className="space-y-2">
-            {history.length === 0 && <p className="text-sm text-gray-400">暂无历史记录</p>}
-            {history.map((h) => (
-              <button
-                type="button"
-                key={h.id}
-                onClick={() => {
-                  setSource(h.source);
-                  setResult(h.result);
-                }}
-                className="block w-full rounded-xl bg-white px-4 py-3 text-left shadow-sm hover:ring-1 hover:ring-brand/30"
-              >
-                <div className="mb-1 line-clamp-1 text-sm text-gray-800">{h.source}</div>
-                <div className="line-clamp-1 text-xs text-gray-400">{h.result}</div>
-              </button>
-            ))}
-          </div>
-        </div>
+        <>
+          <div
+            className="fixed inset-0 z-30 bg-black/20 animate-fade-in"
+            onClick={() => setShowHistory(false)}
+          />
+          <aside className="fixed inset-y-0 right-0 z-40 flex w-96 max-w-[90vw] flex-col border-l border-line bg-card shadow-overlay animate-slide-up">
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
+              <h2 className="text-sm font-semibold text-ink">
+                {t('历史记录')}
+                <span className="ml-2 text-xs font-normal text-ink-3">{history.length}</span>
+              </h2>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  className="rounded-md px-2 py-1 text-xs text-ink-3 transition-colors hover:text-danger"
+                  onClick={async () => {
+                    await browser.storage.local.remove(HISTORY_KEY);
+                    setHistory([]);
+                  }}
+                >
+                  {t('清空历史')}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md p-1 text-ink-3 transition-colors hover:bg-fill hover:text-ink"
+                  onClick={() => setShowHistory(false)}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 space-y-2 overflow-y-auto p-3">
+              {history.length === 0 && (
+                <p className="p-2 text-sm text-ink-3">{t('暂无历史记录')}</p>
+              )}
+              {history.map((h) => (
+                <button
+                  type="button"
+                  key={h.id}
+                  onClick={() => {
+                    setSource(h.source);
+                    setResult(h.result);
+                    setShowHistory(false);
+                  }}
+                  className="block w-full rounded-xl border border-line px-3.5 py-2.5 text-left transition-colors hover:border-brand/40 hover:bg-fill"
+                >
+                  <div className="mb-1 line-clamp-1 text-sm text-ink">{h.source}</div>
+                  <div className="line-clamp-1 text-xs text-ink-3">{h.result}</div>
+                </button>
+              ))}
+            </div>
+          </aside>
+        </>
       )}
     </div>
   );

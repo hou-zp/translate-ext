@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { Button } from '../../src/components/ui';
+import { t } from '../../src/core/i18n';
 import type { DocProgress } from './useDocTranslator';
 
 export function ToolButton(props: {
@@ -8,18 +10,15 @@ export function ToolButton(props: {
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant={props.primary ? 'primary' : 'secondary'}
+      size="sm"
+      className="!px-3 !py-1.5 !text-sm"
       disabled={props.disabled}
       onClick={props.onClick}
-      className={`rounded-lg px-3 py-1.5 text-sm disabled:opacity-50 ${
-        props.primary
-          ? 'bg-brand text-white hover:bg-brand-dark'
-          : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-      }`}
     >
       {props.children}
-    </button>
+    </Button>
   );
 }
 
@@ -28,17 +27,17 @@ export function ProgressBar({ progress }: { progress: DocProgress }) {
   const pct = Math.round((progress.done / progress.total) * 100);
   return (
     <div className="flex min-w-40 flex-1 items-center gap-2">
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-fill">
         <div
-          className="h-full rounded-full bg-brand transition-all"
+          className="h-full rounded-full bg-brand transition-[width] duration-300"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-gray-500">
-        {progress.done}/{progress.total}
+      <span className="text-xs tabular-nums text-ink-3">
+        {progress.done}/{progress.total} · {pct}%
       </span>
       {progress.error && (
-        <span className="max-w-60 truncate text-xs text-red-500" title={progress.error}>
+        <span className="max-w-60 truncate text-xs text-danger" title={progress.error}>
           {progress.error}
         </span>
       )}
@@ -56,10 +55,13 @@ export function BilingualList(props: {
       {props.paragraphs.map((p) => {
         const tr = props.results[p.key];
         return (
-          <div key={p.key} className="rounded-xl bg-white px-5 py-4 shadow-sm">
-            <p className="mb-1.5 text-sm leading-6 text-gray-500">{p.text}</p>
-            <p className="text-[15px] leading-7 text-gray-900">
-              {tr ?? <span className="text-gray-300">待翻译…</span>}
+          <div
+            key={p.key}
+            className="rounded-xl border border-line/70 bg-card px-5 py-4 shadow-card"
+          >
+            <p className="mb-1.5 text-sm leading-6 text-ink-2">{p.text}</p>
+            <p className="text-[15px] leading-7 text-ink">
+              {tr ?? <span className="text-ink-3">{t('待翻译')}…</span>}
             </p>
           </div>
         );

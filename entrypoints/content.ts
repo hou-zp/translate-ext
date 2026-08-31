@@ -14,6 +14,7 @@ import { HoverTranslator } from '../src/content/hover';
 import { showImageTranslation } from '../src/content/image-translate';
 import { InputTranslator } from '../src/content/input-translate';
 import { ParagraphRenderer } from '../src/content/renderer';
+import { ProgressPill } from '../src/content/progress-pill';
 import { toggleMangaMode } from '../src/content/manga';
 import { SelectionBubble } from '../src/content/selection';
 import { injectStyles } from '../src/content/styles';
@@ -59,6 +60,24 @@ export default defineContentScript({
     // caption watcher runs in every frame: some players live inside iframes
     const capWatcher = new VideoCaptionWatcher(() => cfg);
 
+    // bottom-right progress pill while a full-page translation is running
+    let pill: ProgressPill | null = null;
+    let pillTimer: ReturnType<typeof setInterval> | undefined;
+    const trackProgress = () => {
+      if (!isTopFrame) return;
+      const p = (pill ??= new ProgressPill(() => controller.restore()));
+      if (pillTimer) clearInterval(pillTimer);
+      pillTimer = setInterval(() => {
+        if (!controller.active) {
+          clearInterval(pillTimer);
+          pillTimer = undefined;
+          p.hide();
+          return;
+        }
+        p.update(controller.doneCount, controller.totalCount);
+      }, 500);
+    };
+
     onConfigChanged((next) => {
       cfg = next;
       rule = findSiteRule(cfg, location.hostname);
@@ -71,6 +90,7 @@ export default defineContentScript({
       ping: () => ({ pong: true as const }),
       translatePage: async () => {
         const translated = await controller.toggle();
+        if (translated) trackProgress();
         return { translated };
       },
       restorePage: () => {
@@ -92,7 +112,7 @@ export default defineContentScript({
 
     // Auto-translate sites from the "always translate" list.
     if (mode === 'always') {
-      void controller.start();
+      void controller.start().then(trackProgress);
     }
   },
 });

@@ -1,5 +1,14 @@
 import type { AppConfig } from '../core/config';
 import { sendToBackground } from '../core/messaging';
+import {
+  CAPTION_BG,
+  CAPTION_FONT_ORIG,
+  CAPTION_FONT_TRANS,
+  CAPTION_ORIG_COLOR,
+  CAPTION_PADDING,
+  CAPTION_RADIUS,
+  CAPTION_TRANS_COLOR,
+} from './caption-style';
 import { stripMarkers } from './walker';
 
 interface CaptionTrack {
@@ -161,22 +170,22 @@ export class YouTubeSubtitles {
     const orig = document.createElement('div');
     Object.assign(orig.style, {
       display: 'inline-block',
-      background: 'rgba(8,8,8,0.75)',
-      color: '#fff',
-      font: '500 18px/1.45 system-ui, sans-serif',
-      padding: '2px 10px',
-      borderRadius: '4px',
+      background: CAPTION_BG,
+      color: CAPTION_ORIG_COLOR,
+      font: CAPTION_FONT_ORIG,
+      padding: CAPTION_PADDING,
+      borderRadius: CAPTION_RADIUS,
       whiteSpace: 'pre-wrap',
     } satisfies Partial<CSSStyleDeclaration>);
 
     const trans = document.createElement('div');
     Object.assign(trans.style, {
       display: 'inline-block',
-      background: 'rgba(8,8,8,0.75)',
-      color: '#7cc4ff',
-      font: '600 20px/1.5 system-ui, sans-serif',
-      padding: '2px 10px',
-      borderRadius: '4px',
+      background: CAPTION_BG,
+      color: CAPTION_TRANS_COLOR,
+      font: CAPTION_FONT_TRANS,
+      padding: CAPTION_PADDING,
+      borderRadius: CAPTION_RADIUS,
       marginTop: '4px',
       whiteSpace: 'pre-wrap',
     } satisfies Partial<CSSStyleDeclaration>);

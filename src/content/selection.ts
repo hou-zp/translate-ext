@@ -2,17 +2,24 @@ import { computePosition, flip, offset, shift } from '@floating-ui/dom';
 import type { AppConfig } from '../core/config';
 import { addFavorite } from '../core/favorites';
 import { t } from '../core/i18n';
+import { LANGS } from '../core/langs';
 import { sendToBackground } from '../core/messaging';
 import { PROVIDERS } from '../providers';
+import { fadeOutRemove, overlayRoot, pathHasClass } from './overlay';
 import { stripMarkers } from './walker';
 
 interface VirtualEl {
   getBoundingClientRect: () => DOMRect;
 }
 
+function langLabel(code: string): string {
+  return LANGS.find((l) => l.code === code)?.label ?? code;
+}
+
 /**
  * Selection translation: after selecting text a small trigger appears;
  * clicking it opens a bubble with the translation, copy and speak actions.
+ * All UI lives in the shared overlay shadow root.
  */
 export class SelectionBubble {
   private trigger: HTMLElement | null = null;
@@ -37,16 +44,14 @@ export class SelectionBubble {
   }
 
   private onMouseDown = (ev: MouseEvent): void => {
-    const target = ev.target as Element | null;
-    if (target?.closest('.txe-sel-panel, .txe-sel-trigger')) return;
+    if (pathHasClass(ev, 'txe-sel-panel', 'txe-sel-trigger')) return;
     this.hideAll();
   };
 
   private onMouseUp = (ev: MouseEvent): void => {
     const cfg = this.getConfig();
     if (!cfg?.selectionEnabled) return;
-    const target = ev.target as Element | null;
-    if (target?.closest('.txe-sel-panel, .txe-sel-trigger, .txe-ball, .txe-ball-panel')) return;
+    if (pathHasClass(ev, 'txe-sel-panel', 'txe-sel-trigger', 'txe-ball', 'txe-ball-frame')) return;
     // wait for the selection to settle
     setTimeout(() => {
       const sel = window.getSelection();
@@ -88,7 +93,7 @@ export class SelectionBubble {
       this.trigger = null;
       void this.openPanel(text, anchor);
     });
-    document.documentElement.appendChild(trigger);
+    overlayRoot().appendChild(trigger);
     this.trigger = trigger;
     void computePosition(anchor as never, trigger, {
       placement: 'top',
@@ -112,12 +117,17 @@ export class SelectionBubble {
     const providerName = cfg ? PROVIDERS[cfg.provider]?.name ?? cfg.provider : '';
     const title = document.createElement('span');
     title.textContent = `${t('划词翻译')} · ${providerName}`;
+    const lang = document.createElement('span');
+    lang.className = 'txe-sel-lang';
+    lang.textContent = `${langLabel(cfg?.sourceLang ?? 'auto')} → ${langLabel(cfg?.targetLang ?? 'zh-CN')}`;
     const close = document.createElement('span');
     close.className = 'txe-sel-close';
     close.textContent = '✕';
     close.title = t('关闭');
     close.addEventListener('click', () => this.hideAll());
-    head.append(title, close);
+    const left = document.createElement('span');
+    left.append(title, lang);
+    head.append(left, close);
 
     const body = document.createElement('div');
     body.className = 'txe-sel-body';
@@ -129,7 +139,7 @@ export class SelectionBubble {
     foot.className = 'txe-sel-foot';
 
     panel.append(head, body, foot);
-    document.documentElement.appendChild(panel);
+    overlayRoot().appendChild(panel);
     this.panel = panel;
 
     const position = () =>
@@ -201,9 +211,9 @@ export class SelectionBubble {
   }
 
   private hideAll(): void {
-    this.trigger?.remove();
+    if (this.trigger) fadeOutRemove(this.trigger);
     this.trigger = null;
-    this.panel?.remove();
+    if (this.panel) fadeOutRemove(this.panel);
     this.panel = null;
   }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
-import { useToast } from '../../src/components/ui';
+import { Button, useToast } from '../../src/components/ui';
 import { useConfig } from '../../src/components/useConfig';
 import { t } from '../../src/core/i18n';
 import { sendToTab } from '../../src/core/messaging';
@@ -69,18 +69,20 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white px-4 py-3">
+      <div className="sticky top-0 z-10 border-b border-line bg-card px-4 py-3 shadow-card">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-medium text-gray-500">{t('当前页面')}</span>
-          <span className="max-w-[60%] truncate text-xs text-gray-400" title={pageTitle}>
+          <span className="text-xs font-medium text-ink-3">{t('当前页面')}</span>
+          <span className="max-w-[60%] truncate text-xs text-ink-3" title={pageTitle}>
             {pageTitle}
           </span>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="lg"
+          className="w-full !py-2.5 !text-sm"
           disabled={busy || state === null}
+          loading={busy}
           onClick={togglePage}
-          className="w-full rounded-xl bg-brand py-2.5 text-sm font-medium text-white shadow-sm hover:bg-brand-dark disabled:opacity-50"
         >
           {state === null
             ? t('此页面不支持翻译，请在普通网页中使用')
@@ -89,10 +91,18 @@ export default function App() {
               : state.translated
                 ? t('显示原文')
                 : t('翻译当前页面')}
-        </button>
+        </Button>
         {state?.translated && progress !== null && progress < 100 && (
-          <div className="mt-2 h-1 overflow-hidden rounded bg-gray-100">
-            <div className="h-full bg-brand transition-all" style={{ width: `${progress}%` }} />
+          <div className="mt-2 flex items-center gap-2 animate-fade-in">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-fill">
+              <div
+                className="h-full rounded-full bg-brand transition-[width] duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="text-[11px] tabular-nums text-ink-3">
+              {state.done}/{state.total}
+            </span>
           </div>
         )}
       </div>

@@ -1,5 +1,12 @@
 import type { AppConfig } from '../core/config';
 import { sendToBackground } from '../core/messaging';
+import {
+  CAPTION_BG,
+  CAPTION_FONT_TRANS,
+  CAPTION_PADDING,
+  CAPTION_RADIUS,
+  CAPTION_TRANS_COLOR,
+} from './caption-style';
 import { stripMarkers } from './walker';
 
 /**
@@ -234,11 +241,11 @@ export class VideoCaptionWatcher {
       pointerEvents: 'none',
       textAlign: 'center',
       display: 'none',
-      background: 'rgba(8,8,8,0.78)',
-      color: '#7cc4ff',
-      font: '600 18px/1.5 system-ui, sans-serif',
-      padding: '3px 12px',
-      borderRadius: '6px',
+      background: CAPTION_BG,
+      color: CAPTION_TRANS_COLOR,
+      font: CAPTION_FONT_TRANS,
+      padding: CAPTION_PADDING,
+      borderRadius: CAPTION_RADIUS,
       whiteSpace: 'pre-wrap',
     } satisfies Partial<CSSStyleDeclaration>);
     document.documentElement.appendChild(el);

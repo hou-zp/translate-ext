@@ -2,11 +2,15 @@ import { computePosition, flip, offset, shift } from '@floating-ui/dom';
 import type { AppConfig } from '../core/config';
 import { t } from '../core/i18n';
 import { sendToBackground } from '../core/messaging';
+import { fadeOutRemove, overlayRoot, pathHasClass } from './overlay';
 
 let panel: HTMLElement | null = null;
+let cleanup: (() => void) | null = null;
 
 function close(): void {
-  panel?.remove();
+  cleanup?.();
+  cleanup = null;
+  if (panel) fadeOutRemove(panel);
   panel = null;
 }
 
@@ -38,6 +42,7 @@ export async function showImageTranslation(srcUrl: string, cfg: AppConfig): Prom
   const closeBtn = document.createElement('span');
   closeBtn.className = 'txe-sel-close';
   closeBtn.textContent = '✕';
+  closeBtn.title = t('关闭');
   closeBtn.addEventListener('click', close);
   head.append(title, closeBtn);
 
@@ -52,8 +57,22 @@ export async function showImageTranslation(srcUrl: string, cfg: AppConfig): Prom
   foot.className = 'txe-sel-foot';
 
   el.append(head, body, foot);
-  document.documentElement.appendChild(el);
+  overlayRoot().appendChild(el);
   panel = el;
+
+  // dismiss like the selection panel: Escape or click outside
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
+  const onDown = (e: MouseEvent) => {
+    if (!pathHasClass(e, 'txe-sel-panel')) close();
+  };
+  document.addEventListener('keydown', onKey);
+  document.addEventListener('mousedown', onDown, true);
+  cleanup = () => {
+    document.removeEventListener('keydown', onKey);
+    document.removeEventListener('mousedown', onDown, true);
+  };
 
   const anchor = anchorFor(srcUrl);
   const position = () =>
@@ -86,7 +105,7 @@ export async function showImageTranslation(srcUrl: string, cfg: AppConfig): Prom
     const msg = err instanceof Error ? err.message : String(err);
     body.textContent = `${t('翻译失败')}: ${msg}`;
     const hint = document.createElement('div');
-    hint.style.cssText = 'margin-top:6px;font-size:11px;opacity:.65';
+    hint.className = 'txe-sel-hint';
     hint.textContent = t('图片翻译需要多模态模型（如 gpt-4o 或 Ollama llava）');
     body.appendChild(hint);
   }

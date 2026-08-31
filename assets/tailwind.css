@@ -1,12 +1,145 @@
 @import 'tailwindcss';
 
+/* ---------------------------------------------------------------------------
+ * Semantic design tokens (light + dark via CSS variables)
+ * ------------------------------------------------------------------------- */
+:root {
+  --tx-surface: #f6f8fb; /* page canvas */
+  --tx-card: #ffffff; /* elevated card */
+  --tx-fill: #f1f4f9; /* subdued fill: rows, inputs */
+  --tx-fill-2: #e8edf5; /* fill hover / pressed */
+  --tx-line: #e4e9f0; /* hairline borders */
+  --tx-line-strong: #d3dae4;
+  --tx-ink: #10192b; /* primary text */
+  --tx-ink-2: #55617a; /* secondary text */
+  --tx-ink-3: #97a1b4; /* muted text */
+  --tx-brand-soft: #eaf1fe; /* brand tinted fill */
+  --tx-shadow-card: 0 1px 2px rgba(16, 25, 43, 0.05), 0 4px 16px rgba(16, 25, 43, 0.05);
+  --tx-shadow-popover: 0 4px 12px rgba(16, 25, 43, 0.1), 0 12px 32px rgba(16, 25, 43, 0.12);
+  --tx-shadow-overlay: 0 8px 24px rgba(16, 25, 43, 0.16), 0 24px 64px rgba(16, 25, 43, 0.2);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tx-surface: #0d1320;
+    --tx-card: #161e30;
+    --tx-fill: #1d2740;
+    --tx-fill-2: #263352;
+    --tx-line: #263148;
+    --tx-line-strong: #344059;
+    --tx-ink: #e8edf6;
+    --tx-ink-2: #a3aec5;
+    --tx-ink-3: #6b7690;
+    --tx-brand-soft: #1c2b4d;
+    --tx-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.3);
+    --tx-shadow-popover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.45);
+    --tx-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5), 0 24px 64px rgba(0, 0, 0, 0.55);
+    color-scheme: dark;
+  }
+}
+
 @theme {
+  /* brand scale */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
   --color-brand: #3b82f6;
   --color-brand-dark: #2563eb;
+
+  /* status */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* keyframes-backed animations */
+  --animate-fade-in: tx-fade-in 0.15s var(--ease-out-soft) both;
+  --animate-pop-in: tx-pop-in 0.15s var(--ease-out-soft) both;
+  --animate-slide-up: tx-slide-up 0.25s var(--ease-out-soft) both;
+  --animate-collapse-in: tx-collapse-in 0.2s var(--ease-out-soft) both;
+
+  @keyframes tx-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes tx-pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  @keyframes tx-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes tx-collapse-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* semantic colors mapped to the CSS variables above (theme-aware) */
+@theme inline {
+  --color-surface: var(--tx-surface);
+  --color-card: var(--tx-card);
+  --color-fill: var(--tx-fill);
+  --color-fill-2: var(--tx-fill-2);
+  --color-line: var(--tx-line);
+  --color-line-strong: var(--tx-line-strong);
+  --color-ink: var(--tx-ink);
+  --color-ink-2: var(--tx-ink-2);
+  --color-ink-3: var(--tx-ink-3);
+  --color-brand-soft: var(--tx-brand-soft);
+
+  --shadow-card: var(--tx-shadow-card);
+  --shadow-popover: var(--tx-shadow-popover);
+  --shadow-overlay: var(--tx-shadow-overlay);
 }
 
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', sans-serif;
+  background: var(--tx-surface);
+  color: var(--tx-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

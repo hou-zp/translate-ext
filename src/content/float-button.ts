@@ -1,15 +1,15 @@
 import { browser } from 'wxt/browser';
 import type { AppConfig } from '../core/config';
 import type { PageTranslationController } from './controller';
+import { fadeOutRemove, overlayRoot, pathHasClass } from './overlay';
 
-const PANEL_WIDTH = 372;
 const PANEL_HEIGHT = 544;
 
 /**
  * The floating ball docked at the right edge of the page. Opens the full
  * extension panel (the popup page, embedded in an iframe) so every feature
  * is available without reaching for the toolbar icon. Draggable vertically;
- * hidden when disabled in config.
+ * hidden when disabled in config. Rendered inside the overlay shadow root.
  */
 export class FloatBall {
   private ball: HTMLElement | null = null;
@@ -22,8 +22,7 @@ export class FloatBall {
     private getConfig: () => AppConfig | null,
   ) {
     document.addEventListener('mousedown', (e) => {
-      const target = e.target as Element | null;
-      if (!target?.closest('.txe-ball, .txe-ball-panel')) this.closePanel();
+      if (!pathHasClass(e, 'txe-ball', 'txe-ball-frame')) this.closePanel();
     });
     // the embedded popup asks us to close it (after translate / opening pages)
     window.addEventListener('message', (e) => {
@@ -53,6 +52,7 @@ export class FloatBall {
       const onMove = (me: MouseEvent) => {
         if (!this.dragging) return;
         moved = true;
+        ball.classList.add('txe-dragging');
         this.closePanel();
         const pct = Math.min(92, Math.max(4, (me.clientY / window.innerHeight) * 100));
         this.topPercent = pct;
@@ -60,6 +60,7 @@ export class FloatBall {
       };
       const onUp = () => {
         this.dragging = false;
+        ball.classList.remove('txe-dragging');
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
       };
@@ -72,7 +73,7 @@ export class FloatBall {
       else this.openPanel();
     });
 
-    document.documentElement.appendChild(ball);
+    overlayRoot().appendChild(ball);
     this.ball = ball;
   }
 
@@ -85,7 +86,7 @@ export class FloatBall {
   private openPanel(): void {
     this.closePanel();
     const panel = document.createElement('div');
-    panel.className = 'txe-ball-panel txe-ball-frame';
+    panel.className = 'txe-ball-frame';
     // keep the whole panel inside the viewport, aligned with the ball
     const ballY = (this.topPercent / 100) * window.innerHeight;
     const top = Math.min(Math.max(8, ballY - 20), window.innerHeight - PANEL_HEIGHT - 8);
@@ -97,12 +98,12 @@ export class FloatBall {
     iframe.setAttribute('allow', 'clipboard-write');
     panel.appendChild(iframe);
 
-    document.documentElement.appendChild(panel);
+    overlayRoot().appendChild(panel);
     this.panel = panel;
   }
 
   private closePanel(): void {
-    this.panel?.remove();
+    if (this.panel) fadeOutRemove(this.panel);
     this.panel = null;
   }
 }

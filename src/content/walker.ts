@@ -34,7 +34,7 @@ function isOurNode(el: Element): boolean {
     el.classList?.contains('txe-orig-holder') ||
     el.classList?.contains('txe-loading') ||
     el.classList?.contains('txe-error') ||
-    el.closest?.('.txe-t, .txe-sel-panel, .txe-sel-trigger, .txe-ball, .txe-ball-panel') != null
+    el.closest?.('.txe-t, .txe-manga-box') != null
   );
 }
 

@@ -43,22 +43,26 @@ function collectImages(): HTMLImageElement[] {
 function makeBox(img: HTMLImageElement): HTMLElement {
   const box = document.createElement('div');
   box.className = 'txe-manga-box';
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
   Object.assign(box.style, {
     position: 'absolute',
     zIndex: '2147483645',
-    background: 'rgba(255,255,255,0.94)',
-    color: '#1a1a1a',
+    background: dark ? 'rgba(22,30,48,0.94)' : 'rgba(255,255,255,0.94)',
+    color: dark ? '#e8edf6' : '#1a1a1a',
     font: '500 13px/1.5 system-ui, sans-serif',
     padding: '6px 10px',
-    borderRadius: '6px',
-    boxShadow: '0 1px 6px rgba(0,0,0,0.25)',
+    borderRadius: '8px',
+    boxShadow: dark ? '0 1px 6px rgba(0,0,0,0.5)' : '0 1px 6px rgba(0,0,0,0.25)',
     maxHeight: '45%',
     overflow: 'auto',
     whiteSpace: 'pre-wrap',
+    opacity: '0',
+    transition: 'opacity 0.2s ease',
   } satisfies Partial<CSSStyleDeclaration>);
   box.textContent = `${t('正在识别')}…`;
   positionBox(img, box);
   document.body.appendChild(box);
+  requestAnimationFrame(() => (box.style.opacity = '1'));
   return box;
 }
 
@@ -91,7 +95,7 @@ async function translateOne(cfg: AppConfig, o: MangaOverlay, mySession: number):
     if (!active || mySession !== session) return;
     const msg = err instanceof Error ? err.message : String(err);
     o.box.textContent = `${t('翻译失败')}: ${msg}`;
-    o.box.style.color = '#b91c1c';
+    o.box.style.color = '#dc2626';
   }
 }
 
