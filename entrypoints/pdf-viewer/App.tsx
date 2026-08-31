@@ -6,6 +6,7 @@ import { t } from '../../src/core/i18n';
 import { LANGS } from '../../src/core/langs';
 import { allExperts } from '../../src/core/prompts';
 import { PROVIDER_LIST } from '../../src/providers';
+import BatchPdfView from './BatchPdfView';
 import PdfView from './PdfView';
 import { AssView, DocxView, EpubView, SrtView, TxtView } from './TextDocViews';
 
@@ -25,18 +26,30 @@ function detectKind(file: File): DocKind | null {
 export default function App() {
   const { config, update } = useConfig();
   const [file, setFile] = useState<File | null>(null);
+  const [batchFiles, setBatchFiles] = useState<File[] | null>(null);
   const [kind, setKind] = useState<DocKind | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [rejected, setRejected] = useState(false);
 
-  const acceptFile = useCallback((f: File | undefined) => {
-    if (!f) return;
+  const acceptFiles = useCallback((list: FileList | File[] | null | undefined) => {
+    const files = Array.from(list ?? []);
+    if (files.length === 0) return;
+    // multiple PDFs at once: batch translate + export queue
+    if (files.length > 1 && files.every((f) => detectKind(f) === 'pdf')) {
+      setRejected(false);
+      setFile(null);
+      setKind(null);
+      setBatchFiles(files);
+      return;
+    }
+    const f = files[0]!;
     const k = detectKind(f);
     if (!k) {
       setRejected(true);
       return;
     }
     setRejected(false);
+    setBatchFiles(null);
     setFile(f);
     setKind(k);
   }, []);
@@ -48,13 +61,14 @@ export default function App() {
       <header className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-ink">{t('文档翻译')}</h1>
-          {file && (
+          {(file || batchFiles) && (
             <button
               type="button"
               className="text-sm text-brand hover:underline"
               onClick={() => {
                 setFile(null);
                 setKind(null);
+                setBatchFiles(null);
               }}
             >
               {t('换一个文件')}
@@ -97,7 +111,7 @@ export default function App() {
         </div>
       </header>
 
-      {!file && (
+      {!file && !batchFiles && (
         <label
           className={`flex h-[420px] cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed transition-all duration-200 ${
             dragOver
@@ -112,7 +126,7 @@ export default function App() {
           onDrop={(e) => {
             e.preventDefault();
             setDragOver(false);
-            acceptFile(e.dataTransfer.files?.[0]);
+            acceptFiles(e.dataTransfer.files);
           }}
         >
           <FileUp
@@ -123,22 +137,24 @@ export default function App() {
           />
           <p className="mb-1 text-lg font-medium text-ink">{t('拖拽文件到这里，或点击选择')}</p>
           <p className="text-sm text-ink-3">
-            {t('支持 PDF / EPUB / DOCX / TXT / Markdown / SRT / ASS 字幕')}
+            {t('支持 PDF / EPUB / DOCX / TXT / Markdown / SRT / ASS 字幕，多选 PDF 可批量翻译导出')}
           </p>
           <p className="mt-2 text-xs text-ink-3/70">{t('文件在本地解析，不会被上传')}</p>
           {rejected && <p className="mt-3 text-sm text-danger">{t('暂不支持该文件格式')}</p>}
           <input
             type="file"
             className="hidden"
+            multiple
             accept=".pdf,.epub,.docx,.txt,.md,.srt,.ass,.ssa"
             onChange={(e) => {
-              acceptFile(e.target.files?.[0]);
+              acceptFiles(e.target.files);
               e.target.value = '';
             }}
           />
         </label>
       )}
 
+      {batchFiles && <BatchPdfView files={batchFiles} config={config} />}
       {file && kind === 'pdf' && <PdfView file={file} config={config} />}
       {file && kind === 'epub' && <EpubView file={file} config={config} />}
       {file && kind === 'docx' && <DocxView file={file} config={config} />}

@@ -1,6 +1,17 @@
 import { browser } from 'wxt/browser';
+import { BUILTIN_RULES } from './builtin-rules';
 
-export type ProviderId = 'google' | 'deepl' | 'microsoft' | 'openai' | 'ollama';
+export type ProviderId =
+  | 'google'
+  | 'deepl'
+  | 'microsoft'
+  | 'openai'
+  | 'ollama'
+  | 'gemini'
+  | 'claude'
+  | 'tencent'
+  | 'baidu'
+  | 'caiyun';
 export type DisplayMode = 'bilingual' | 'replace';
 export type TranslationStyle = 'plain' | 'underline' | 'dashed' | 'quote' | 'highlight';
 export type HoverModifier = 'none' | 'shift' | 'alt' | 'ctrl';
@@ -9,8 +20,14 @@ export interface ProviderSettings {
   apiKey?: string;
   baseUrl?: string;
   model?: string;
-  /** Azure translator region (microsoft only) */
+  /** Azure translator region (microsoft) / cloud region (tencent) */
   region?: string;
+  /** Tencent cloud SecretId */
+  secretId?: string;
+  /** Tencent cloud SecretKey */
+  secretKey?: string;
+  /** Baidu fanyi APP ID */
+  appId?: string;
   /** Max parallel requests, falls back to provider default */
   concurrency?: number;
 }
@@ -47,8 +64,8 @@ export interface AppConfig {
   sourceLang: string;
   targetLang: string;
   provider: ProviderId;
-  /** AI provider used for the refine pass (must be openai or ollama) */
-  refineProvider: 'openai' | 'ollama';
+  /** AI provider used for the refine pass (must be an AI provider) */
+  refineProvider: ProviderId;
   refineEnabled: boolean;
   expertId: string;
   displayMode: DisplayMode;
@@ -83,8 +100,20 @@ export interface AppConfig {
   siteRules: SiteRule[];
   /** Remote rule subscription URL (JSON array of SiteRule) */
   ruleSubscribeUrl: string;
-  /** Rules fetched from the subscription (read-only, refreshed manually) */
+  /** Rules fetched from the subscription (refreshed manually or by alarm) */
   subscribedRules: SiteRule[];
+  /** SHA-256 of the last subscription payload, used to skip no-op refreshes */
+  subscribedRulesHash: string;
+  /** Timestamp (ms) of the last successful subscription refresh */
+  subscribedRulesUpdatedAt: number;
+  /** Patterns of built-in official rules the user has turned off */
+  disabledBuiltinRules: string[];
+  /** Manga mode: run a local ONNX text detector before the vision call */
+  mangaDetectorEnabled: boolean;
+  /** ONNX model URL for the manga text detector (YOLOv5/v8 export) */
+  mangaDetectorModelUrl: string;
+  /** Self-hosted pdf2zh / BabelDOC service base URL (optional enhancement) */
+  pdfServiceUrl: string;
   /** Mirror the config to chrome.storage.sync (cross-device, includes API keys) */
   syncEnabled: boolean;
   /** WebDAV backup target (e.g. https://dav.jianguoyun.com/dav/translate-ext/) */
@@ -116,6 +145,11 @@ export const DEFAULT_CONFIG: AppConfig = {
     microsoft: {},
     openai: { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
     ollama: { baseUrl: 'http://127.0.0.1:11434', model: 'qwen2.5:7b' },
+    gemini: { model: 'gemini-2.5-flash' },
+    claude: { model: 'claude-sonnet-4-5' },
+    tencent: { region: 'ap-guangzhou' },
+    baidu: {},
+    caiyun: {},
   },
   customExperts: [],
   terms: [],
@@ -128,6 +162,12 @@ export const DEFAULT_CONFIG: AppConfig = {
   siteRules: [],
   ruleSubscribeUrl: '',
   subscribedRules: [],
+  subscribedRulesHash: '',
+  subscribedRulesUpdatedAt: 0,
+  disabledBuiltinRules: [],
+  mangaDetectorEnabled: false,
+  mangaDetectorModelUrl: '',
+  pdfServiceUrl: '',
   syncEnabled: false,
   webdavUrl: '',
   webdavUser: '',
@@ -197,8 +237,9 @@ export function siteMode(cfg: AppConfig, host: string): 'always' | 'never' | 'no
 }
 
 /**
- * Effective site rule for a host. Local rules win over subscribed rules;
- * within each list the longest (most specific) pattern wins.
+ * Effective site rule for a host, in priority order:
+ * local rules > subscribed rules > built-in official rules.
+ * Within each tier the longest (most specific) pattern wins.
  */
 export function findSiteRule(cfg: AppConfig, host: string): SiteRule | null {
   const pick = (rules: SiteRule[]): SiteRule | null => {
@@ -206,5 +247,38 @@ export function findSiteRule(cfg: AppConfig, host: string): SiteRule | null {
     if (matches.length === 0) return null;
     return matches.sort((a, b) => b.pattern.length - a.pattern.length)[0] ?? null;
   };
-  return pick(cfg.siteRules) ?? pick(cfg.subscribedRules);
+  const builtin = BUILTIN_RULES.filter((r) => !cfg.disabledBuiltinRules.includes(r.pattern));
+  return pick(cfg.siteRules) ?? pick(cfg.subscribedRules) ?? pick(builtin);
+}
+
+const RULE_DISPLAY_MODES: DisplayMode[] = ['bilingual', 'replace'];
+const RULE_STYLES: TranslationStyle[] = ['plain', 'underline', 'dashed', 'quote', 'highlight'];
+
+/**
+ * Validate untrusted rule data (subscription payloads). Drops malformed
+ * entries and unknown enum values instead of failing the whole list.
+ */
+export function sanitizeRules(data: unknown): SiteRule[] {
+  if (!Array.isArray(data)) return [];
+  const out: SiteRule[] = [];
+  for (const raw of data) {
+    if (!raw || typeof raw !== 'object') continue;
+    const r = raw as Record<string, unknown>;
+    if (typeof r.pattern !== 'string' || !r.pattern.trim()) continue;
+    const rule: SiteRule = { pattern: r.pattern.trim().toLowerCase() };
+    if (typeof r.excludeSelector === 'string' && r.excludeSelector.trim()) {
+      rule.excludeSelector = r.excludeSelector.trim();
+    }
+    if (typeof r.includeSelector === 'string' && r.includeSelector.trim()) {
+      rule.includeSelector = r.includeSelector.trim();
+    }
+    if (RULE_DISPLAY_MODES.includes(r.displayMode as DisplayMode)) {
+      rule.displayMode = r.displayMode as DisplayMode;
+    }
+    if (RULE_STYLES.includes(r.translationStyle as TranslationStyle)) {
+      rule.translationStyle = r.translationStyle as TranslationStyle;
+    }
+    out.push(rule);
+  }
+  return out;
 }

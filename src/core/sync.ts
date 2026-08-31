@@ -19,7 +19,7 @@ let lastMirrored = '';
 
 function stripBulky(cfg: AppConfig): AppConfig {
   // subscribedRules can be re-fetched and may blow the 8KB sync item quota
-  return { ...cfg, subscribedRules: [] };
+  return { ...cfg, subscribedRules: [], subscribedRulesHash: '', subscribedRulesUpdatedAt: 0 };
 }
 
 async function mirrorToSync(cfg: AppConfig): Promise<void> {
@@ -44,8 +44,13 @@ async function applyFromSync(payload: SyncPayload): Promise<void> {
   if (localJson === remoteJson) return;
   applyingRemote = true;
   try {
-    // keep locally-fetched subscribed rules
-    await replaceConfig({ ...payload.cfg, subscribedRules: local.subscribedRules });
+    // keep locally-fetched subscribed rules and their freshness metadata
+    await replaceConfig({
+      ...payload.cfg,
+      subscribedRules: local.subscribedRules,
+      subscribedRulesHash: local.subscribedRulesHash,
+      subscribedRulesUpdatedAt: local.subscribedRulesUpdatedAt,
+    });
     lastMirrored = remoteJson;
   } finally {
     applyingRemote = false;

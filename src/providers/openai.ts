@@ -117,6 +117,10 @@ export const openaiProvider: Provider = {
   async translate(texts, from, to, cfg, opts) {
     return translateViaChat(makeChat(cfg), texts, from, to, opts);
   },
+  chat(cfg) {
+    return makeChat(cfg);
+  },
+  vision: openaiVision,
   async test(cfg) {
     if (!cfg.apiKey && baseUrl(cfg).includes('api.openai.com')) {
       return { ok: false, message: '请先填写 API Key' };

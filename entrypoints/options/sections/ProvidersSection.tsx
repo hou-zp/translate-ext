@@ -17,6 +17,16 @@ const PROVIDER_FIELDS: Record<
     { key: 'apiKey', label: t('Azure 翻译资源 Key'), password: true },
     { key: 'region', label: t('区域（如 eastasia，全球资源可留空）'), placeholder: 'eastasia' },
   ],
+  tencent: [
+    { key: 'secretId', label: 'SecretId', password: true },
+    { key: 'secretKey', label: 'SecretKey', password: true },
+    { key: 'region', label: t('地域'), placeholder: 'ap-guangzhou' },
+  ],
+  baidu: [
+    { key: 'appId', label: 'APP ID' },
+    { key: 'apiKey', label: t('密钥'), password: true },
+  ],
+  caiyun: [{ key: 'apiKey', label: 'Token', password: true }],
   openai: [
     {
       key: 'baseUrl',
@@ -26,14 +36,38 @@ const PROVIDER_FIELDS: Record<
     { key: 'apiKey', label: 'API Key', password: true },
     { key: 'model', label: t('模型'), placeholder: 'gpt-4o-mini' },
   ],
+  gemini: [
+    { key: 'apiKey', label: 'API Key', password: true },
+    { key: 'model', label: t('模型'), placeholder: 'gemini-2.5-flash' },
+  ],
+  claude: [
+    { key: 'apiKey', label: 'API Key', password: true },
+    { key: 'model', label: t('模型'), placeholder: 'claude-sonnet-4-5' },
+  ],
   ollama: [
     { key: 'baseUrl', label: t('服务地址'), placeholder: 'http://127.0.0.1:11434' },
     { key: 'model', label: t('模型'), placeholder: 'qwen2.5:7b' },
   ],
 };
 
-/** Providers that need an API key before they can be used. */
-const NEEDS_KEY: ProviderId[] = ['deepl', 'microsoft', 'openai'];
+/** Credentials each provider needs before it can be used (empty = none). */
+const REQUIRED_KEYS: Partial<Record<ProviderId, (keyof ProviderSettings)[]>> = {
+  deepl: ['apiKey'],
+  microsoft: ['apiKey'],
+  tencent: ['secretId', 'secretKey'],
+  baidu: ['appId', 'apiKey'],
+  caiyun: ['apiKey'],
+  openai: ['apiKey'],
+  gemini: ['apiKey'],
+  claude: ['apiKey'],
+};
+
+/** One-click endpoint presets for the OpenAI-compatible card. */
+const OPENAI_PRESETS: { label: string; baseUrl: string; model: string }[] = [
+  { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+  { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+  { label: 'Moonshot', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
+];
 
 export function ProvidersSection({ config, update }: PanelProps) {
   const [testing, setTesting] = useState<ProviderId | null>(null);
@@ -44,6 +78,15 @@ export function ProvidersSection({ config, update }: PanelProps) {
       providers: {
         ...config.providers,
         [id]: { ...config.providers[id], [key]: value || undefined },
+      },
+    });
+  };
+
+  const setFields = (id: ProviderId, patch: Partial<ProviderSettings>) => {
+    update({
+      providers: {
+        ...config.providers,
+        [id]: { ...config.providers[id], ...patch },
       },
     });
   };
@@ -68,7 +111,9 @@ export function ProvidersSection({ config, update }: PanelProps) {
       {PROVIDER_LIST.map((p) => {
         const res = results[p.id];
         const fields = PROVIDER_FIELDS[p.id];
-        const configured = !NEEDS_KEY.includes(p.id) || !!config.providers[p.id]?.apiKey;
+        const configured = (REQUIRED_KEYS[p.id] ?? []).every(
+          (k) => !!config.providers[p.id]?.[k],
+        );
         const isCurrent = config.provider === p.id;
         return (
           <Card key={p.id}>
@@ -102,6 +147,27 @@ export function ProvidersSection({ config, update }: PanelProps) {
                 )}
               </p>
             )}
+            {p.id === 'openai' && (
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-xs text-ink-3">{t('快速预设')}</span>
+                {OPENAI_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    className={`rounded-full border px-2.5 py-0.5 text-[11px] transition-colors ${
+                      config.providers.openai?.baseUrl === preset.baseUrl
+                        ? 'border-brand bg-brand-soft text-brand'
+                        : 'border-line text-ink-2 hover:bg-fill'
+                    }`}
+                    onClick={() =>
+                      setFields('openai', { baseUrl: preset.baseUrl, model: preset.model })
+                    }
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+            )}
             {fields.map((f) => (
               <Field key={String(f.key)} label={f.label}>
                 <Input
@@ -112,7 +178,7 @@ export function ProvidersSection({ config, update }: PanelProps) {
                 />
               </Field>
             ))}
-            {res?.models && res.models.length > 0 && (p.id === 'ollama' || p.id === 'openai') && (
+            {res?.models && res.models.length > 0 && p.isAI && (
               <Field label={t('从可用模型中选择')}>
                 <Select
                   variant="field"

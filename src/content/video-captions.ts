@@ -22,10 +22,20 @@ export interface CaptionAdapter {
   id: string;
   /** hostname suffixes this adapter applies to */
   hosts: string[];
-  /** element(s) whose textContent is the caption currently on screen */
-  captionSelector: string;
+  /**
+   * Selector(s) for element(s) whose textContent is the caption currently on
+   * screen. An array lets an adapter carry fallbacks for site redesigns.
+   */
+  captionSelector: string | string[];
   /** video: overlay anchored to the <video>; meeting: fixed bar above the window bottom */
   kind: 'video' | 'meeting';
+}
+
+/** Normalize a captionSelector to a single querySelectorAll-ready string. */
+export function captionSelectorOf(adapter: CaptionAdapter): string {
+  return Array.isArray(adapter.captionSelector)
+    ? adapter.captionSelector.join(', ')
+    : adapter.captionSelector;
 }
 
 export const CAPTION_ADAPTERS: CaptionAdapter[] = [
@@ -71,6 +81,93 @@ export const CAPTION_ADAPTERS: CaptionAdapter[] = [
     id: 'vimeo',
     hosts: ['vimeo.com'],
     captionSelector: '.vp-captions-line, .vp-captions cue, .vp-captions',
+    kind: 'video',
+  },
+  {
+    id: 'ted',
+    hosts: ['ted.com'],
+    captionSelector: [
+      '[data-testid="captions"] span',
+      '.Captions__caption',
+      '.vjs-text-track-cue > div',
+    ],
+    kind: 'video',
+  },
+  {
+    id: 'hulu',
+    hosts: ['hulu.com'],
+    captionSelector: ['.CaptionBox', '.caption-text-container', '[class*="ClosedCaption"] span'],
+    kind: 'video',
+  },
+  {
+    id: 'max',
+    hosts: ['max.com', 'hbomax.com'],
+    captionSelector: [
+      '[data-testid="cue-window"]',
+      '[class*="cueWindow"]',
+      '[class*="TextTrack"] span',
+    ],
+    kind: 'video',
+  },
+  {
+    id: 'crunchyroll',
+    hosts: ['crunchyroll.com'],
+    captionSelector: [
+      '[data-testid="vilos-captions"] span',
+      '.vjs-text-track-cue > div',
+      '[class*="captions"] span',
+    ],
+    kind: 'video',
+  },
+  {
+    id: 'twitch',
+    hosts: ['twitch.tv'],
+    captionSelector: ['[data-a-target="player-captions-container"]', '.captions-line'],
+    kind: 'video',
+  },
+  {
+    id: 'appletv',
+    hosts: ['tv.apple.com'],
+    captionSelector: ['.video-captions', '[class*="captions-container"] span'],
+    kind: 'video',
+  },
+  {
+    id: 'dailymotion',
+    hosts: ['dailymotion.com'],
+    captionSelector: ['.np_DiodeCaptions', '[class*="Subtitles__text"]'],
+    kind: 'video',
+  },
+  {
+    id: 'iqiyi',
+    hosts: ['iqiyi.com', 'iq.com'],
+    captionSelector: ['.iqp-subtitle', '[class*="intl-subtitle"]'],
+    kind: 'video',
+  },
+  {
+    id: 'tencentvideo',
+    hosts: ['v.qq.com', 'wetv.vip'],
+    captionSelector: ['.txp_subtitle', '.txp_subtitles_txt'],
+    kind: 'video',
+  },
+  {
+    id: 'youku',
+    hosts: ['youku.com'],
+    captionSelector: ['.kui-subtitles', '[class*="subtitle-text"]'],
+    kind: 'video',
+  },
+  {
+    id: 'twitter',
+    hosts: ['x.com', 'twitter.com'],
+    captionSelector: [
+      '[data-testid="videoPlayer"] [data-testid="captions"]',
+      '[data-testid="captionsText"]',
+    ],
+    kind: 'video',
+  },
+  {
+    id: 'tiktok',
+    hosts: ['tiktok.com'],
+    captionSelector: ['[class*="DivVideoCaptionContainer"]', '[data-e2e="video-caption"]'],
     kind: 'video',
   },
   {
@@ -167,7 +264,7 @@ export class VideoCaptionWatcher {
 
   private currentCaption(): string {
     if (!this.adapter) return '';
-    const els = document.querySelectorAll(this.adapter.captionSelector);
+    const els = document.querySelectorAll(captionSelectorOf(this.adapter));
     if (els.length === 0) return '';
     if (this.adapter.kind === 'meeting') {
       // meetings append caption blocks; only the last one is live

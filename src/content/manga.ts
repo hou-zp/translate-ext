@@ -79,17 +79,47 @@ function repositionAll(): void {
   }
 }
 
+const ORIG_SRC_ATTR = 'data-txe-orig-src';
+const ORIG_SRCSET_ATTR = 'data-txe-orig-srcset';
+
+/** Swap an image to its repainted version, keeping the original restorable. */
+export function swapImageSrc(img: HTMLImageElement, dataUrl: string): void {
+  if (!img.getAttribute(ORIG_SRC_ATTR)) {
+    img.setAttribute(ORIG_SRC_ATTR, img.currentSrc || img.src);
+    if (img.srcset) img.setAttribute(ORIG_SRCSET_ATTR, img.srcset);
+  }
+  img.srcset = '';
+  img.src = dataUrl;
+}
+
+/** Restore an image swapped by swapImageSrc. */
+export function restoreImageSrc(img: HTMLImageElement): void {
+  const orig = img.getAttribute(ORIG_SRC_ATTR);
+  if (!orig) return;
+  img.src = orig;
+  const srcset = img.getAttribute(ORIG_SRCSET_ATTR);
+  if (srcset) img.srcset = srcset;
+  img.removeAttribute(ORIG_SRC_ATTR);
+  img.removeAttribute(ORIG_SRCSET_ATTR);
+}
+
 async function translateOne(cfg: AppConfig, o: MangaOverlay, mySession: number): Promise<void> {
   try {
-    const src = o.img.currentSrc || o.img.src;
-    const res = await sendToBackground('translateImage', { srcUrl: src, to: cfg.targetLang });
+    const src = o.img.getAttribute(ORIG_SRC_ATTR) || o.img.currentSrc || o.img.src;
+    const res = await sendToBackground('translateMangaImage', { srcUrl: src, to: cfg.targetLang });
     if (!active || mySession !== session) return;
-    if (res.text === '[no text]') {
+    if (res.dataUrl) {
+      // in-place repaint: replace the image, no overlay box needed
+      swapImageSrc(o.img, res.dataUrl);
       o.box.remove();
       overlays = overlays.filter((x) => x !== o);
-    } else {
-      o.box.textContent = res.text;
+    } else if (res.fallbackText && res.fallbackText !== '[no text]') {
+      o.box.textContent = res.fallbackText;
       positionBox(o.img, o.box);
+    } else {
+      // no text found in this image
+      o.box.remove();
+      overlays = overlays.filter((x) => x !== o);
     }
   } catch (err) {
     if (!active || mySession !== session) return;
@@ -135,6 +165,52 @@ export function stopMangaMode(): void {
   session++;
   for (const { box } of overlays) box.remove();
   overlays = [];
+  // undo every in-place repaint done in this session
+  document
+    .querySelectorAll<HTMLImageElement>(`img[${ORIG_SRC_ATTR}]`)
+    .forEach((img) => restoreImageSrc(img));
   removeEventListener('resize', repositionAll);
   removeEventListener('scroll', repositionAll);
+}
+
+/**
+ * Context-menu entry: repaint a single image with translations filled into
+ * its text regions. A second invocation on the same image restores it.
+ */
+export async function fillSingleImage(srcUrl: string, cfg: AppConfig): Promise<void> {
+  const imgs = Array.from(document.querySelectorAll('img'));
+  const img = imgs.find(
+    (i) =>
+      i.src === srcUrl ||
+      i.currentSrc === srcUrl ||
+      i.getAttribute(ORIG_SRC_ATTR) === srcUrl,
+  );
+  if (!img) return;
+  if (img.getAttribute(ORIG_SRC_ATTR)) {
+    restoreImageSrc(img);
+    return;
+  }
+  const box = makeBox(img);
+  try {
+    const res = await sendToBackground('translateMangaImage', {
+      srcUrl,
+      to: cfg.targetLang,
+    });
+    if (res.dataUrl) {
+      swapImageSrc(img, res.dataUrl);
+      box.remove();
+    } else if (res.fallbackText && res.fallbackText !== '[no text]') {
+      box.textContent = res.fallbackText;
+      positionBox(img, box);
+      setTimeout(() => box.remove(), 15000);
+    } else {
+      box.textContent = t('图片中未识别到文字');
+      setTimeout(() => box.remove(), 3000);
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    box.textContent = `${t('翻译失败')}: ${msg}`;
+    box.style.color = '#dc2626';
+    setTimeout(() => box.remove(), 6000);
+  }
 }

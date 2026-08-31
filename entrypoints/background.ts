@@ -14,12 +14,14 @@ import {
 import { detectLangHeuristic } from '../src/core/langs';
 import { buildRefinePrompts, getExpert } from '../src/core/prompts';
 import { chunkTexts, mapWithConcurrency, withRetry, type IndexedText } from '../src/core/queue';
+import { parseMangaRegions, renderMangaImage } from '../src/core/manga-canvas';
+import { sendToOffscreen, type MangaRegion } from '../src/core/messaging';
+import { refreshSubscribedRules } from '../src/core/rules-sync';
 import { startConfigSync } from '../src/core/sync';
 import { glossaryPrompt, lockTerms, matchTerms, restoreTerms, termsSignature } from '../src/core/terms';
 import { getProvider } from '../src/providers';
 import { googleDetect } from '../src/providers/google';
-import { listOllamaModels, ollamaChat, ollamaVision } from '../src/providers/ollama';
-import { openaiChat, openaiVision } from '../src/providers/openai';
+import { listOllamaModels } from '../src/providers/ollama';
 import type { ChatFn } from '../src/providers/ai-common';
 import { langEnglishName } from '../src/core/langs';
 
@@ -121,10 +123,16 @@ async function translateBatch(req: TranslateBatchReq): Promise<TranslateBatchRes
 function refineChat(cfg: AppConfig): { chat: ChatFn; providerId: ProviderId; model?: string } {
   // Prefer the active provider when it is already an LLM.
   const active = getProvider(cfg.provider);
-  const providerId: ProviderId = active.isAI ? cfg.provider : cfg.refineProvider;
+  let providerId: ProviderId = active.isAI ? cfg.provider : cfg.refineProvider;
+  let provider = getProvider(providerId);
+  if (!provider.chat) {
+    providerId = 'ollama';
+    provider = getProvider(providerId);
+  }
   const pcfg = cfg.providers[providerId] ?? {};
-  const chat = providerId === 'openai' ? openaiChat(pcfg) : ollamaChat(pcfg);
-  return { chat, providerId, model: pcfg.model };
+  const chat = provider.chat;
+  if (!chat) throw new Error('没有可用的 AI 服务，请在设置中配置');
+  return { chat: chat.call(provider, pcfg), providerId, model: pcfg.model };
 }
 
 async function refineBatch(req: {
@@ -237,41 +245,150 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 /** OCR + translate an image with a multimodal model (OpenAI-compatible or Ollama). */
+/** Pick the provider used for multimodal (vision) calls. */
+function visionProvider(cfg: AppConfig): { providerId: ProviderId; vision: NonNullable<ReturnType<typeof getProvider>['vision']> } {
+  const active = getProvider(cfg.provider);
+  let providerId: ProviderId = active.isAI ? cfg.provider : cfg.refineProvider;
+  let provider = getProvider(providerId);
+  if (!provider.vision) {
+    providerId = cfg.refineProvider;
+    provider = getProvider(providerId);
+  }
+  const vision = provider.vision;
+  if (!vision) throw new Error('当前服务不支持图片翻译，请在设置中配置支持视觉的 AI 服务');
+  return { providerId, vision: vision.bind(provider) };
+}
+
+/** Fetch an image and normalize it to a data: URL (max 8MB). */
+async function fetchImageAsDataUrl(srcUrl: string): Promise<string> {
+  if (srcUrl.startsWith('data:')) return srcUrl;
+  const res = await fetch(srcUrl);
+  if (!res.ok) throw new Error(`图片下载失败 HTTP ${res.status}`);
+  const mime = res.headers.get('content-type')?.split(';')[0] || 'image/png';
+  const buf = new Uint8Array(await res.arrayBuffer());
+  if (buf.length > 8 * 1024 * 1024) throw new Error('图片超过 8MB，暂不支持');
+  return `data:${mime};base64,${bytesToBase64(buf)}`;
+}
+
+/** OCR + translate an image with a multimodal model. */
 async function translateImage(req: { srcUrl: string; to: string }): Promise<{ text: string }> {
   const cfg = await loadConfig();
-  const active = getProvider(cfg.provider);
-  const providerId: ProviderId = active.isAI ? cfg.provider : cfg.refineProvider;
+  const { providerId, vision } = visionProvider(cfg);
   const pcfg = cfg.providers[providerId] ?? {};
   const toName = langEnglishName(req.to);
-
-  let dataUrl = req.srcUrl;
-  let base64 = '';
-  let mime = 'image/png';
-  if (req.srcUrl.startsWith('data:')) {
-    base64 = req.srcUrl.slice(req.srcUrl.indexOf(',') + 1);
-    mime = req.srcUrl.slice(5, req.srcUrl.indexOf(';'));
-  } else {
-    const res = await fetch(req.srcUrl);
-    if (!res.ok) throw new Error(`图片下载失败 HTTP ${res.status}`);
-    mime = res.headers.get('content-type')?.split(';')[0] || 'image/png';
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.length > 8 * 1024 * 1024) throw new Error('图片超过 8MB，暂不支持');
-    base64 = bytesToBase64(buf);
-    dataUrl = `data:${mime};base64,${base64}`;
-  }
+  const dataUrl = await fetchImageAsDataUrl(req.srcUrl);
 
   const prompt =
     `Extract all readable text from this image, then translate it into ${toName}.\n` +
     `Reply with the translation only, keeping the original line structure. ` +
     `If the image contains no text, reply exactly: [no text]`;
 
-  const out =
-    providerId === 'ollama'
-      ? await ollamaVision(pcfg, prompt, base64)
-      : await openaiVision(pcfg, prompt, dataUrl);
+  const out = await vision(pcfg, prompt, dataUrl);
   const text = out.trim();
   if (!text) throw new Error('模型未返回内容');
   return { text };
+}
+
+/**
+ * Optional local detector: run the ONNX text detector in the offscreen
+ * document (Chromium only). Returns null when unavailable so the vision
+ * model detects regions on its own.
+ */
+async function detectMangaBoxes(
+  dataUrl: string,
+  modelUrl: string,
+): Promise<{ x: number; y: number; w: number; h: number }[] | null> {
+  const offscreen = (
+    globalThis as unknown as {
+      chrome?: {
+        offscreen?: {
+          hasDocument?: () => Promise<boolean>;
+          createDocument: (opts: unknown) => Promise<void>;
+        };
+      };
+    }
+  ).chrome?.offscreen;
+  if (!offscreen) return null;
+  try {
+    const has = await offscreen.hasDocument?.();
+    if (!has) {
+      await offscreen.createDocument({
+        url: 'offscreen.html',
+        reasons: ['WORKERS'],
+        justification: '在本地运行 ONNX 文本检测，用于漫画翻译',
+      });
+    }
+  } catch {
+    // a concurrent call may have created it already
+  }
+  try {
+    const res = await sendToOffscreen('detectTextRegions', { dataUrl, modelUrl });
+    return res.boxes;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Manga pipeline: ask the vision model for text regions as structured JSON,
+ * erase + repaint each region on a canvas, and return the repainted image.
+ * Falls back to the plain whole-image translation when the model cannot
+ * produce usable regions.
+ */
+async function translateMangaImage(req: {
+  srcUrl: string;
+  to: string;
+}): Promise<{ regions: MangaRegion[]; dataUrl?: string; fallbackText?: string }> {
+  const cfg = await loadConfig();
+  const { providerId, vision } = visionProvider(cfg);
+  const pcfg = cfg.providers[providerId] ?? {};
+  const toName = langEnglishName(req.to);
+  const dataUrl = await fetchImageAsDataUrl(req.srcUrl);
+
+  let hint = '';
+  if (cfg.mangaDetectorEnabled && cfg.mangaDetectorModelUrl) {
+    const boxes = await detectMangaBoxes(dataUrl, cfg.mangaDetectorModelUrl);
+    if (boxes && boxes.length > 0) {
+      const rounded = boxes.map((b) =>
+        [b.x, b.y, b.w, b.h].map((n) => Number(n.toFixed(3))),
+      );
+      hint =
+        `\nA local text detector already located ${boxes.length} text region(s) at these ` +
+        `normalized [x,y,w,h] positions: ${JSON.stringify(rounded)}. Report exactly these ` +
+        `regions (minor adjustments allowed) with their OCR text and translations.`;
+    }
+  }
+
+  const prompt =
+    `You are a comic/manga translation engine. Detect every speech bubble, caption ` +
+    `and sound-effect region containing text in this image, OCR each region, and ` +
+    `translate the text into ${toName}.\n` +
+    `Reply with ONLY a JSON array (no markdown fences, no commentary). Each element:\n` +
+    `{"x":0.12,"y":0.05,"w":0.20,"h":0.15,"text":"original text","translation":"translated text"}\n` +
+    `x,y is the top-left corner and w,h the size of the text region, all normalized ` +
+    `to the image dimensions (values between 0 and 1). Boxes must tightly cover the ` +
+    `text. Reply with [] if the image contains no text.` +
+    hint;
+
+  const raw = await vision(pcfg, prompt, dataUrl);
+  const regions = parseMangaRegions(raw);
+
+  if (regions === null) {
+    // Model ignored the JSON contract: degrade to the whole-image translation.
+    const fallback = await translateImage({ srcUrl: req.srcUrl, to: req.to });
+    return { regions: [], fallbackText: fallback.text };
+  }
+  if (regions.length === 0) return { regions: [] };
+
+  try {
+    const rendered = await renderMangaImage(dataUrl, regions);
+    return { regions, dataUrl: rendered };
+  } catch {
+    // Canvas failure (odd formats etc.): still return the text regions so the
+    // caller can show them as an overlay list.
+    const text = regions.map((r) => r.translation).join('\n');
+    return { regions, fallbackText: text };
+  }
 }
 
 async function openExtensionPage(page: 'options' | 'pdf-viewer' | 'text-translate' | 'shortcuts') {
@@ -296,9 +413,17 @@ async function sendToActiveTab(type: string, payload: unknown = undefined) {
   }
 }
 
+const RULES_ALARM = 'tx-refresh-rules';
+
 export default defineBackground(() => {
   void cache.ensureLoaded();
   startConfigSync();
+
+  // Silent daily refresh of the site-rule subscription (no-op when unset).
+  void browser.alarms?.create(RULES_ALARM, { periodInMinutes: 60 * 24, delayInMinutes: 3 });
+  browser.alarms?.onAlarm.addListener((alarm) => {
+    if (alarm.name === RULES_ALARM) void refreshSubscribedRules();
+  });
 
   onBackgroundMessage({
     translateBatch: (req) => translateBatch(req),
@@ -345,6 +470,7 @@ export default defineBackground(() => {
 
     buildPageContext: (req) => buildPageContext(req),
     translateImage: (req) => translateImage(req),
+    translateMangaImage: (req) => translateMangaImage(req),
   });
 
   // ---- streaming translation port (text translate page) ----
@@ -396,6 +522,11 @@ export default defineBackground(() => {
         title: '翻译图片中的文字（AI）',
         contexts: ['image'],
       });
+      browser.contextMenus.create({
+        id: 'tx-translate-image-fill',
+        title: '翻译并回填图片文字（AI）',
+        contexts: ['image'],
+      });
     });
   });
 
@@ -420,6 +551,13 @@ export default defineBackground(() => {
         __tx: true,
         scope: 'cs',
         type: 'translateImage',
+        payload: { srcUrl: info.srcUrl },
+      }).catch(() => undefined);
+    } else if (info.menuItemId === 'tx-translate-image-fill' && info.srcUrl) {
+      void browser.tabs.sendMessage(tab.id, {
+        __tx: true,
+        scope: 'cs',
+        type: 'translateImageFill',
         payload: { srcUrl: info.srcUrl },
       }).catch(() => undefined);
     }

@@ -1,5 +1,7 @@
 import type { AppConfig } from '../core/config';
 import { sendToBackground } from '../core/messaging';
+import { buildSrt, msToSrtTime } from '../doc/srt';
+import { downloadText } from '../doc/txt';
 import {
   CAPTION_BG,
   CAPTION_FONT_ORIG,
@@ -84,6 +86,8 @@ export class YouTubeSubtitles {
   private translations: (string | null)[] = [];
   private requestedChunks = new Set<number>();
   private overlay: HTMLElement | null = null;
+  private exportBtn: HTMLButtonElement | null = null;
+  private exporting = false;
   private video: HTMLVideoElement | null = null;
   private lastShownIdx = -2;
   private videoId = '';
@@ -194,8 +198,81 @@ export class YouTubeSubtitles {
     player.appendChild(overlay);
     this.overlay = overlay;
     this.video = video;
+    this.attachExportButton(player);
     video.addEventListener('timeupdate', this.onTimeUpdate);
     this.onTimeUpdate();
+  }
+
+  private attachExportButton(player: HTMLElement): void {
+    const btn = document.createElement('button');
+    btn.className = 'txe-yt-export';
+    btn.textContent = '导出双语字幕';
+    Object.assign(btn.style, {
+      position: 'absolute',
+      top: '12px',
+      right: '12px',
+      zIndex: '61',
+      padding: '4px 10px',
+      borderRadius: '14px',
+      border: 'none',
+      background: 'rgba(0,0,0,0.65)',
+      color: '#fff',
+      font: '12px/1.6 system-ui, sans-serif',
+      cursor: 'pointer',
+      opacity: '0.35',
+      transition: 'opacity 0.15s',
+    } satisfies Partial<CSSStyleDeclaration>);
+    btn.addEventListener('mouseenter', () => (btn.style.opacity = '1'));
+    btn.addEventListener('mouseleave', () => {
+      if (!this.exporting) btn.style.opacity = '0.35';
+    });
+    btn.addEventListener('click', () => void this.exportSrt());
+    player.appendChild(btn);
+    this.exportBtn = btn;
+  }
+
+  /** Translate every remaining chunk, then download a bilingual SRT file. */
+  async exportSrt(): Promise<void> {
+    if (this.exporting || this.cues.length === 0) return;
+    this.exporting = true;
+    const btn = this.exportBtn;
+    if (btn) {
+      btn.disabled = true;
+      btn.style.opacity = '1';
+    }
+    try {
+      const totalChunks = Math.ceil(this.cues.length / CHUNK_SIZE);
+      for (let chunk = 0; chunk < totalChunks; chunk++) {
+        if (this.disposed) return;
+        const from = chunk * CHUNK_SIZE;
+        const missing = this.cues
+          .slice(from, from + CHUNK_SIZE)
+          .some((_, i) => !this.translations[from + i]);
+        if (missing) await this.translateChunk(chunk);
+        if (btn) btn.textContent = `翻译中 ${chunk + 1}/${totalChunks}…`;
+      }
+      const srtCues = this.cues.map((cue, i) => ({
+        index: i + 1,
+        time: `${msToSrtTime(cue.start)} --> ${msToSrtTime(cue.end)}`,
+        text: cue.text,
+      }));
+      const content = buildSrt(srtCues, this.translations, true);
+      downloadText(`youtube-${this.videoId}-bilingual.srt`, content, 'application/x-subrip');
+      if (btn) btn.textContent = '已导出';
+    } catch {
+      if (btn) btn.textContent = '导出失败，点击重试';
+    } finally {
+      this.exporting = false;
+      if (btn) {
+        btn.disabled = false;
+        setTimeout(() => {
+          if (this.exportBtn) {
+            this.exportBtn.textContent = '导出双语字幕';
+            this.exportBtn.style.opacity = '0.35';
+          }
+        }, 2000);
+      }
+    }
   }
 
   private onTimeUpdate = (): void => {
@@ -292,6 +369,9 @@ export class YouTubeSubtitles {
     this.video = null;
     this.overlay?.remove();
     this.overlay = null;
+    this.exportBtn?.remove();
+    this.exportBtn = null;
+    this.exporting = false;
     this.cues = [];
     this.translations = [];
     this.requestedChunks.clear();

@@ -27,8 +27,10 @@ await new Promise((r) => server.listen(PORT, r));
 const ext = path.resolve('.output/chrome-mv3');
 const profile = path.join(os.tmpdir(), `txe-e2e-${Date.now()}`);
 const ctx = await chromium.launchPersistentContext(profile, {
-  channel: 'chromium',
-  headless: true,
+  // E2E_CHANNEL=chrome reuses the system Chrome when the playwright
+  // chromium build is not downloadable in the current environment
+  channel: process.env.E2E_CHANNEL || 'chromium',
+  headless: !process.env.E2E_HEADFUL,
   args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
 });
 

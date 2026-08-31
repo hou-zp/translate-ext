@@ -92,6 +92,10 @@ const cues = parseSrt(srt);
 check('srt parse', cues.length === 2 && cues[1]!.text === 'Second line\nwith wrap', cues);
 const rebuilt = buildSrt(cues, ['你好', '第二行'], true);
 check('srt bilingual build', rebuilt.includes('Hello there\n你好') && rebuilt.includes('第二行'));
+const { msToSrtTime } = await import('../src/doc/srt');
+check('msToSrtTime formats hours/minutes/seconds/millis',
+  msToSrtTime(3723456) === '01:02:03,456');
+check('msToSrtTime zero and clamp', msToSrtTime(0) === '00:00:00,000' && msToSrtTime(-5) === '00:00:00,000');
 
 // ---- txt ----
 const txts = parseTxt('Para one.\n\nPara two\nwrapped line.\n\n\nPara three.');
@@ -151,13 +155,44 @@ check('long paragraph renders as block wrapper',
   blockWrapper !== null && !blockWrapper.classList.contains('txe-inline'));
 
 // ---- video caption adapters ----
-const { findCaptionAdapter } = await import('../src/content/video-captions');
+const { findCaptionAdapter, captionSelectorOf } = await import('../src/content/video-captions');
 check('netflix adapter matches', findCaptionAdapter('www.netflix.com')?.id === 'netflix');
 check('bilibili adapter matches', findCaptionAdapter('www.bilibili.com')?.id === 'bilibili');
 check('meet adapter is meeting kind', findCaptionAdapter('meet.google.com')?.kind === 'meeting');
 check('zoom subdomain matches', findCaptionAdapter('us05web.zoom.us')?.id === 'zoom');
 check('unknown host has no adapter', findCaptionAdapter('example.com') === null);
 check('youtube keeps its dedicated module', findCaptionAdapter('www.youtube.com') === null);
+check('ted adapter matches', findCaptionAdapter('www.ted.com')?.id === 'ted');
+check('hbo max adapter matches both hosts',
+  findCaptionAdapter('play.max.com')?.id === 'max' &&
+  findCaptionAdapter('play.hbomax.com')?.id === 'max');
+check('twitch adapter matches', findCaptionAdapter('www.twitch.tv')?.id === 'twitch');
+check('x/twitter adapter matches both hosts',
+  findCaptionAdapter('x.com')?.id === 'twitter' &&
+  findCaptionAdapter('twitter.com')?.id === 'twitter');
+const tedAdapter = findCaptionAdapter('www.ted.com');
+check('array selectors join into one query',
+  tedAdapter !== null && captionSelectorOf(tedAdapter).includes(', '));
+const netflixAdapter = findCaptionAdapter('www.netflix.com');
+check('string selector passes through unchanged',
+  netflixAdapter !== null &&
+  captionSelectorOf(netflixAdapter) === '.player-timedtext-text-container');
+
+// ---- manga region parsing ----
+const { parseMangaRegions } = await import('../src/core/manga-canvas');
+const mangaOk = parseMangaRegions(
+  '```json\n[{"x":0.1,"y":0.2,"w":0.3,"h":0.1,"text":"こんにちは","translation":"你好"},' +
+    '{"x":1.2,"y":0,"w":0.1,"h":0.1,"text":"bad","translation":"越界"},' +
+    '{"x":0.5,"y":0.5,"w":0.2,"h":0.2,"text":"skip","translation":""}]\n```',
+);
+check('manga regions: valid entry kept, out-of-range and empty dropped',
+  mangaOk !== null && mangaOk.length === 1 && mangaOk[0]!.translation === '你好');
+check('manga regions: w clamped to image bounds',
+  parseMangaRegions('[{"x":0.9,"y":0.9,"w":0.5,"h":0.5,"text":"t","translation":"译"}]')![0]!.w <= 0.1 + 1e-9);
+check('manga regions: empty array is valid (no text)',
+  parseMangaRegions('[]')?.length === 0);
+check('manga regions: prose reply degrades to null',
+  parseMangaRegions('The image shows a cat.') === null);
 
 // ---- terms (glossary) ----
 const { matchTerms, glossaryPrompt, lockTerms, restoreTerms, parseTermsCsv, termsToCsv } =
@@ -195,6 +230,32 @@ const ruleCfg = {
     { pattern: 'docs.example.com', includeSelector: 'article' },
   ],
 };
+const { sanitizeRules: sanitize } = await import('../src/core/config');
+const sanitized = sanitize([
+  { pattern: ' Example.COM ', excludeSelector: 'nav', displayMode: 'replace' },
+  { pattern: '', excludeSelector: 'x' },
+  { pattern: 'ok.com', displayMode: 'bogus', translationStyle: 'underline' },
+  'not-an-object',
+  null,
+]);
+check('sanitizeRules keeps valid entries only',
+  sanitized.length === 2 && sanitized[0]!.pattern === 'example.com');
+check('sanitizeRules drops unknown enum values',
+  sanitized[1]!.displayMode === undefined && sanitized[1]!.translationStyle === 'underline');
+const { BUILTIN_RULES: builtins } = await import('../src/core/builtin-rules');
+check('builtin rules pack loads with 30+ sites', builtins.length >= 30);
+const { findSiteRule: findRule, DEFAULT_CONFIG: defCfg } = await import('../src/core/config');
+const builtinHit = findRule({ ...defCfg }, 'news.ycombinator.com');
+check('builtin rule matches as lowest tier', builtinHit?.pattern === 'news.ycombinator.com');
+const disabledCfg = { ...defCfg, disabledBuiltinRules: ['news.ycombinator.com'] };
+check('disabled builtin rule is skipped', findRule(disabledCfg, 'news.ycombinator.com') === null);
+const overrideCfg = {
+  ...defCfg,
+  siteRules: [{ pattern: 'news.ycombinator.com', excludeSelector: '.custom' }],
+};
+check('local rule overrides builtin',
+  findRule(overrideCfg, 'news.ycombinator.com')?.excludeSelector === '.custom');
+
 check('local rule wins over subscribed',
   findSiteRule(ruleCfg, 'example.com')?.excludeSelector === 'nav');
 check('subdomain matches and longer pattern wins',

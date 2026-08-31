@@ -64,6 +64,34 @@ export type BgProtocol = {
     req: { srcUrl: string; to: string };
     res: { text: string };
   };
+  /**
+   * Manga-style region translation: detect text regions, erase the original
+   * text and repaint the translation in place. Returns the repainted image as
+   * a data URL, or `fallbackText` when the model could not produce regions.
+   */
+  translateMangaImage: {
+    req: { srcUrl: string; to: string };
+    res: { regions: MangaRegion[]; dataUrl?: string; fallbackText?: string };
+  };
+};
+
+/** A detected comic text region, coordinates normalized to image size (0-1). */
+export interface MangaRegion {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  text: string;
+  translation: string;
+}
+
+/** Messages handled by the offscreen document (Chromium only, local ONNX). */
+export type OffProtocol = {
+  /** Detect text regions in an image with the local ONNX detector */
+  detectTextRegions: {
+    req: { dataUrl: string; modelUrl: string };
+    res: { boxes: { x: number; y: number; w: number; h: number }[] };
+  };
 };
 
 export type CsProtocol = {
@@ -72,6 +100,8 @@ export type CsProtocol = {
   getPageState: { req: void; res: { translated: boolean; total: number; done: number } };
   translateSelection: { req: { text?: string }; res: void };
   translateImage: { req: { srcUrl: string }; res: void };
+  /** Repaint a single image with translations filled into its text regions */
+  translateImageFill: { req: { srcUrl: string }; res: void };
   /** Toggle experimental manga mode (batch image translation overlays) */
   mangaMode: { req: void; res: { active: boolean; images: number } };
   ping: { req: void; res: { pong: true } };
@@ -79,7 +109,7 @@ export type CsProtocol = {
 
 interface Envelope {
   __tx: true;
-  scope: 'bg' | 'cs';
+  scope: 'bg' | 'cs' | 'off';
   type: string;
   payload: unknown;
 }
@@ -90,7 +120,7 @@ interface ReplyEnvelope {
   error?: string;
 }
 
-function makeSender(scope: 'bg' | 'cs') {
+function makeSender(scope: 'bg' | 'cs' | 'off') {
   return (type: string, payload: unknown) => ({ __tx: true, scope, type, payload }) as Envelope;
 }
 
@@ -129,7 +159,7 @@ type HandlerMap<P extends Record<string, { req: unknown; res: unknown }>> = {
 };
 
 function listen<P extends Record<string, { req: unknown; res: unknown }>>(
-  scope: 'bg' | 'cs',
+  scope: 'bg' | 'cs' | 'off',
   handlers: Partial<HandlerMap<P>>,
 ) {
   browser.runtime.onMessage.addListener(
@@ -154,6 +184,23 @@ export function onBackgroundMessage(handlers: Partial<HandlerMap<BgProtocol>>) {
 
 export function onContentMessage(handlers: Partial<HandlerMap<CsProtocol>>) {
   listen<CsProtocol>('cs', handlers);
+}
+
+export function sendToOffscreen<K extends keyof OffProtocol>(
+  type: K,
+  payload: OffProtocol[K]['req'],
+): Promise<OffProtocol[K]['res']> {
+  return browser.runtime
+    .sendMessage(makeSender('off')(type as string, payload))
+    .then((reply: ReplyEnvelope) => {
+      if (!reply) throw new Error('no reply from offscreen document');
+      if (!reply.ok) throw new Error(reply.error ?? 'unknown error');
+      return reply.data as OffProtocol[K]['res'];
+    });
+}
+
+export function onOffscreenMessage(handlers: Partial<HandlerMap<OffProtocol>>) {
+  listen<OffProtocol>('off', handlers);
 }
 
 // ---------------------------------------------------------------------------

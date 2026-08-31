@@ -15,7 +15,7 @@ import { showImageTranslation } from '../src/content/image-translate';
 import { InputTranslator } from '../src/content/input-translate';
 import { ParagraphRenderer } from '../src/content/renderer';
 import { ProgressPill } from '../src/content/progress-pill';
-import { toggleMangaMode } from '../src/content/manga';
+import { fillSingleImage, toggleMangaMode } from '../src/content/manga';
 import { SelectionBubble } from '../src/content/selection';
 import { injectStyles } from '../src/content/styles';
 import { VideoCaptionWatcher } from '../src/content/video-captions';
@@ -106,6 +106,9 @@ export default defineContentScript({
       },
       translateImage: async ({ srcUrl }) => {
         await showImageTranslation(srcUrl, cfg);
+      },
+      translateImageFill: async ({ srcUrl }) => {
+        await fillSingleImage(srcUrl, cfg);
       },
       mangaMode: async () => toggleMangaMode(cfg),
     });

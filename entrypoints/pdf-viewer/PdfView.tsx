@@ -2,11 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { AppConfig } from '../../src/core/config';
 import { sendToBackground } from '../../src/core/messaging';
+import { downloadBytes, exportBilingualPdf, fetchCjkFont } from '../../src/doc/pdf-export';
+import { translatePdfRemote } from '../../src/doc/pdf-remote';
 import { downloadText } from '../../src/doc/txt';
 import {
   extractPageParagraphs,
   openPdf,
   renderPageToCanvas,
+  restoreProtectedRuns,
   type PdfPageData,
 } from '../../src/doc/pdf';
 import { t } from '../../src/core/i18n';
@@ -57,8 +60,9 @@ function PdfPageCanvas(props: {
       {props.mode === 'overlay' &&
         props.page.paragraphs.map((para, i) => {
           const key = `${props.page.pageIndex}-${i}`;
-          const tr = props.results[key];
-          if (!tr) return null;
+          const raw = props.results[key];
+          if (!raw) return null;
+          const tr = restoreProtectedRuns(raw, para.protectedRuns);
           const heightPx = para.height * cssHeight;
           const fontSize = Math.max(9, Math.min(18, (heightPx / para.lineCount) * 0.66));
           return (
@@ -72,7 +76,7 @@ function PdfPageCanvas(props: {
                 minHeight: heightPx,
                 fontSize,
               }}
-              title={para.text}
+              title={restoreProtectedRuns(para.text, para.protectedRuns)}
             >
               {tr}
             </div>
@@ -95,6 +99,15 @@ export default function PdfView(props: { file: File; config: AppConfig }) {
     done: 0,
   });
   const ocrCancel = useRef(false);
+  const [pdfExport, setPdfExport] = useState<{ running: boolean; note: string }>({
+    running: false,
+    note: '',
+  });
+  const [remote, setRemote] = useState<{ running: boolean; note: string }>({
+    running: false,
+    note: '',
+  });
+  const remoteAbort = useRef<AbortController | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -167,9 +180,10 @@ export default function PdfView(props: { file: File; config: AppConfig }) {
       .map((page) => {
         const paras = page.paragraphs
           .map((para, i) => {
-            const tr = results[`${page.pageIndex}-${i}`];
+            const raw = results[`${page.pageIndex}-${i}`];
+            const tr = raw ? restoreProtectedRuns(raw, para.protectedRuns) : null;
             return (
-              `<p class="orig">${esc(para.text)}</p>` +
+              `<p class="orig">${esc(restoreProtectedRuns(para.text, para.protectedRuns))}</p>` +
               (tr ? `<p class="trans">${esc(tr)}</p>` : '')
             );
           })
@@ -195,13 +209,98 @@ ${body}
     downloadText(props.file.name.replace(/\.pdf$/i, '') + '-双语.html', html, 'text/html');
   };
 
+  const restoredTranslation = (pageIndex: number, paraIndex: number): string | null => {
+    const raw = results[`${pageIndex}-${paraIndex}`];
+    if (!raw) return null;
+    const para = pages.find((p) => p.pageIndex === pageIndex)?.paragraphs[paraIndex];
+    return para ? restoreProtectedRuns(raw, para.protectedRuns) : raw;
+  };
+
+  const exportPdf = async () => {
+    setPdfExport({ running: true, note: t('准备导出') + '…' });
+    try {
+      const original = await props.file.arrayBuffer();
+      const cjkNeeded =
+        Object.values(results).some((v) => /[\u2E80-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/.test(v)) ||
+        Object.values(ocrResults).some((v) =>
+          /[\u2E80-\u9FFF\u3040-\u30FF\uAC00-\uD7AF]/.test(v),
+        );
+      let cjkFont: ArrayBuffer | undefined;
+      if (cjkNeeded) {
+        cjkFont = await fetchCjkFont((loaded, total) => {
+          const mb = (n: number) => (n / 1048576).toFixed(1);
+          setPdfExport({
+            running: true,
+            note: `${t('下载字体')} ${mb(loaded)}${total ? `/${mb(total)}` : ''} MB…`,
+          });
+        });
+      }
+      setPdfExport({ running: true, note: t('生成 PDF') + '…' });
+      const bytes = await exportBilingualPdf({
+        original,
+        pages,
+        translationFor: restoredTranslation,
+        pageFallback: (p) => ocrResults[p] ?? null,
+        cjkFont,
+      });
+      downloadBytes(props.file.name.replace(/\.pdf$/i, '') + '-双语.pdf', bytes);
+      setPdfExport({ running: false, note: '' });
+    } catch (err) {
+      setPdfExport({
+        running: false,
+        note: `${t('导出失败')}：${err instanceof Error ? err.message : String(err)}`,
+      });
+    }
+  };
+
+  const runRemote = async () => {
+    const base = props.config.pdfServiceUrl.trim();
+    if (!base) return;
+    remoteAbort.current = new AbortController();
+    setRemote({ running: true, note: t('上传中') + '…' });
+    try {
+      const blob = await translatePdfRemote(
+        base,
+        props.file,
+        props.config.sourceLang,
+        props.config.targetLang,
+        (p) => {
+          if (p.stage === 'translate') {
+            setRemote({
+              running: true,
+              note:
+                p.total != null && p.done != null
+                  ? `${t('服务端翻译中')} ${p.done}/${p.total}…`
+                  : t('服务端翻译中') + '…',
+            });
+          } else if (p.stage === 'download') {
+            setRemote({ running: true, note: t('下载结果') + '…' });
+          }
+        },
+        remoteAbort.current.signal,
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = props.file.name.replace(/\.pdf$/i, '') + '-服务端双语.pdf';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      setRemote({ running: false, note: '' });
+    } catch (err) {
+      setRemote({
+        running: false,
+        note: `${t('服务端翻译失败')}：${err instanceof Error ? err.message : String(err)}`,
+      });
+    }
+  };
+
   const exportText = (markdown: boolean) => {
     const out: string[] = [];
     for (const page of pages) {
       out.push(markdown ? `## 第 ${page.pageIndex + 1} 页` : `【第 ${page.pageIndex + 1} 页】`);
       page.paragraphs.forEach((para, i) => {
         const tr = results[`${page.pageIndex}-${i}`];
-        if (tr) out.push(tr);
+        if (tr) out.push(restoreProtectedRuns(tr, para.protectedRuns));
       });
       out.push('');
     }
@@ -272,6 +371,27 @@ ${body}
         <ToolButton onClick={() => exportText(false)}>{t('导出 TXT')}</ToolButton>
         <ToolButton onClick={() => exportText(true)}>{t('导出 Markdown')}</ToolButton>
         <ToolButton onClick={exportHtml}>{t('导出双语 HTML')}</ToolButton>
+        <ToolButton
+          onClick={() => {
+            if (!pdfExport.running) void exportPdf();
+          }}
+        >
+          {pdfExport.running ? pdfExport.note || t('导出中') + '…' : t('导出双语 PDF')}
+        </ToolButton>
+        {!pdfExport.running && pdfExport.note && (
+          <span className="text-xs text-danger">{pdfExport.note}</span>
+        )}
+        {props.config.pdfServiceUrl.trim() &&
+          (!remote.running ? (
+            <ToolButton onClick={() => void runRemote()}>{t('服务端精排翻译')}</ToolButton>
+          ) : (
+            <ToolButton onClick={() => remoteAbort.current?.abort()}>
+              {remote.note || t('处理中') + '…'}（{t('点击取消')}）
+            </ToolButton>
+          ))}
+        {!remote.running && remote.note && (
+          <span className="text-xs text-danger">{remote.note}</span>
+        )}
         <ProgressBar progress={progress} />
         {ocrState.error && (
           <span className="text-xs text-danger">
@@ -312,13 +432,18 @@ ${body}
                     {t('第')} {page.pageIndex + 1} {t('页')}
                   </button>
                   {page.paragraphs.map((para, i) => {
-                    const tr = results[`${page.pageIndex}-${i}`];
+                    const raw = results[`${page.pageIndex}-${i}`];
+                    const tr = raw ? restoreProtectedRuns(raw, para.protectedRuns) : null;
                     return (
                       <p
                         key={i}
                         className="mb-2 border-b border-line/50 pb-2 text-sm leading-6 text-ink"
                       >
-                        {tr ?? <span className="text-ink-3">{para.text}</span>}
+                        {tr ?? (
+                          <span className="text-ink-3">
+                            {restoreProtectedRuns(para.text, para.protectedRuns)}
+                          </span>
+                        )}
                       </p>
                     );
                   })}

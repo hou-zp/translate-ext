@@ -1,4 +1,5 @@
 import type { ExpertDef, ProviderId, ProviderSettings, TermEntry } from '../core/config';
+import type { ChatFn } from './ai-common';
 
 export interface TranslateCallOptions {
   signal?: AbortSignal;
@@ -35,6 +36,10 @@ export interface Provider {
     opts?: TranslateCallOptions,
   ): Promise<(string | null)[]>;
   test(cfg: ProviderSettings): Promise<ProviderTestResult>;
+  /** Raw chat access for AI providers (refine / context pipelines). */
+  chat?(cfg: ProviderSettings): ChatFn;
+  /** Multimodal call: image as a data: URL plus a text prompt. */
+  vision?(cfg: ProviderSettings, prompt: string, imageDataUrl: string): Promise<string>;
 }
 
 export async function fetchJson<T>(

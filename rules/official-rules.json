@@ -1,0 +1,162 @@
+[
+  {
+    "pattern": "news.ycombinator.com",
+    "excludeSelector": ".pagetop, .subtext, .yclinks, .votelinks"
+  },
+  {
+    "pattern": "github.com",
+    "excludeSelector": ".blob-code, .react-code-lines, .diff-table, .commit-ref, .branch-name, .file-navigation, .Box-header--blue, .text-mono, .js-navigation-open[href*='/tree/']"
+  },
+  {
+    "pattern": "reddit.com",
+    "excludeSelector": "shreddit-sidebar-container, faceplate-tracker[noun='sidebar'], .flair, shreddit-recent-posts"
+  },
+  {
+    "pattern": "x.com",
+    "includeSelector": "[data-testid='tweetText'], [data-testid='UserDescription'], article"
+  },
+  {
+    "pattern": "twitter.com",
+    "includeSelector": "[data-testid='tweetText'], [data-testid='UserDescription'], article"
+  },
+  {
+    "pattern": "wikipedia.org",
+    "excludeSelector": ".mw-editsection, .reference, .navbox, .infobox-label, .citation, .mw-cite-backlink, .sistersitebox"
+  },
+  {
+    "pattern": "arxiv.org",
+    "excludeSelector": ".ltx_equation, .ltx_Math, math, .ltx_tag, .ltx_bibliography .ltx_bibitem .ltx_tag"
+  },
+  {
+    "pattern": "stackoverflow.com",
+    "excludeSelector": "#left-sidebar, .s-sidebarwidget, .post-taglist, .js-vote-count, .s-topbar"
+  },
+  {
+    "pattern": "stackexchange.com",
+    "excludeSelector": "#left-sidebar, .s-sidebarwidget, .post-taglist, .js-vote-count, .s-topbar"
+  },
+  {
+    "pattern": "medium.com",
+    "excludeSelector": "nav, .speechify-ignore, .pw-multi-vote-count"
+  },
+  {
+    "pattern": "dev.to",
+    "excludeSelector": ".crayons-side-navigation, .sidebar-additional, .crayons-tag"
+  },
+  {
+    "pattern": "substack.com",
+    "excludeSelector": ".subscribe-widget, .subscription-widget-wrap, .navbar"
+  },
+  {
+    "pattern": "quora.com",
+    "excludeSelector": ".q-sticky, [class*='SidebarWrapper']"
+  },
+  {
+    "pattern": "nytimes.com",
+    "excludeSelector": "#masthead, [data-testid='masthead-container'], .css-nav, footer"
+  },
+  {
+    "pattern": "theguardian.com",
+    "excludeSelector": "nav, [data-component='nav3'], gu-island[name='SubNav'], footer"
+  },
+  {
+    "pattern": "bbc.com",
+    "excludeSelector": "nav, header[role='banner'], footer, [data-testid='level-1-navigation']"
+  },
+  {
+    "pattern": "cnn.com",
+    "excludeSelector": ".header, .footer, nav"
+  },
+  {
+    "pattern": "reuters.com",
+    "excludeSelector": "header, footer, nav, [data-testid='Byline']"
+  },
+  {
+    "pattern": "bloomberg.com",
+    "excludeSelector": "nav, [data-component='navigation'], footer"
+  },
+  {
+    "pattern": "economist.com",
+    "excludeSelector": "header, footer, nav"
+  },
+  {
+    "pattern": "ft.com",
+    "excludeSelector": ".o-header, .o-footer, nav"
+  },
+  {
+    "pattern": "wsj.com",
+    "excludeSelector": "header, footer, nav"
+  },
+  {
+    "pattern": "techcrunch.com",
+    "excludeSelector": "header, footer, nav, .wp-block-tc23-post-picks"
+  },
+  {
+    "pattern": "theverge.com",
+    "excludeSelector": "header, footer, nav"
+  },
+  {
+    "pattern": "arstechnica.com",
+    "excludeSelector": "header, footer, nav"
+  },
+  {
+    "pattern": "wired.com",
+    "excludeSelector": "header, footer, nav"
+  },
+  {
+    "pattern": "nature.com",
+    "excludeSelector": ".c-header, .c-footer, .c-article-references__links, .c-article-identifiers"
+  },
+  {
+    "pattern": "sciencedirect.com",
+    "excludeSelector": "header, footer, nav, .Banner, .math"
+  },
+  {
+    "pattern": "link.springer.com",
+    "excludeSelector": ".c-article-header .c-article-identifiers, .c-article-references__links, header, footer"
+  },
+  {
+    "pattern": "ieee.org",
+    "excludeSelector": "header, footer, nav, .stats-container"
+  },
+  {
+    "pattern": "huggingface.co",
+    "excludeSelector": ".font-mono, header, footer, .tag"
+  },
+  {
+    "pattern": "npmjs.com",
+    "excludeSelector": "header, footer, nav, code, [class*='sidebar']"
+  },
+  {
+    "pattern": "pypi.org",
+    "excludeSelector": "header, footer, nav, .sidebar-section, .package-header__pip-instructions"
+  },
+  {
+    "pattern": "crates.io",
+    "excludeSelector": "header, footer, nav, [class*='crate-downloads']"
+  },
+  {
+    "pattern": "producthunt.com",
+    "excludeSelector": "header, footer, nav"
+  },
+  {
+    "pattern": "lobste.rs",
+    "excludeSelector": ".byline, nav, .voters"
+  },
+  {
+    "pattern": "imdb.com",
+    "excludeSelector": "nav, [data-testid='hero-rating-bar__aggregate-rating'], footer"
+  },
+  {
+    "pattern": "goodreads.com",
+    "excludeSelector": "header, footer, nav, .RatingStatistics"
+  },
+  {
+    "pattern": "youtube.com",
+    "excludeSelector": "#masthead, ytd-mini-guide-renderer, #guide-content, .ytp-caption-window-container"
+  },
+  {
+    "pattern": "amazon.com",
+    "excludeSelector": "#navbar, #nav-main, .a-price, #wayfinding-breadcrumbs_feature_div, #rhf"
+  }
+]

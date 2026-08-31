@@ -1,8 +1,9 @@
 import type { CSSProperties } from 'react';
-import { Card, Field, Row, Segmented, Select, Toggle } from '../../../src/components/ui';
-import type { AppConfig, HoverModifier, TranslationStyle } from '../../../src/core/config';
+import { Card, Field, Input, Row, Segmented, Select, Toggle } from '../../../src/components/ui';
+import type { AppConfig, HoverModifier, ProviderId, TranslationStyle } from '../../../src/core/config';
 import { t } from '../../../src/core/i18n';
 import { LANGS } from '../../../src/core/langs';
+import { PROVIDER_LIST } from '../../../src/providers';
 import { TRANSLATION_STYLES } from '../../../src/content/style-defs';
 import { STYLE_OPTIONS, type PanelProps } from '../shared';
 
@@ -144,7 +145,7 @@ export function GeneralSection({ config, update }: PanelProps) {
           <Row
             label={t('视频网站双语字幕（Beta）')}
             desc={t(
-              'Netflix / B 站 / Coursera / Udemy / Prime Video / Disney+ / Vimeo，跟随播放器原生字幕实时翻译',
+              'Netflix / B 站 / TED / Hulu / HBO Max / Crunchyroll / Twitch / Prime Video / Disney+ 等约 20 个站点，跟随播放器原生字幕实时翻译',
             )}
           >
             <Toggle
@@ -188,14 +189,56 @@ export function GeneralSection({ config, update }: PanelProps) {
               variant="field"
               className="w-56"
               value={config.refineProvider}
-              onChange={(v) => update({ refineProvider: v as 'openai' | 'ollama' })}
-              options={[
-                { value: 'ollama', label: t('Ollama（本地）') },
-                { value: 'openai', label: t('OpenAI 兼容') },
-              ]}
+              onChange={(v) => update({ refineProvider: v as ProviderId })}
+              options={PROVIDER_LIST.filter((p) => p.isAI).map((p) => ({
+                value: p.id,
+                label: p.name,
+              }))}
             />
           </Row>
         </div>
+      </Card>
+
+      <Card
+        title={t('漫画模式（实验）')}
+        desc={t(
+          '漫画模式默认由视觉模型直接给出文字区域并在气泡内擦除回填。可选开启本地 ONNX 检测器提高出框精度：首次使用会下载推理引擎（约 13MB）与模型文件并缓存在本地，仅 Chrome / Edge 可用。',
+        )}
+      >
+        <div className="divide-y divide-line/60">
+          <Row label={t('本地文本区域检测器')} desc={t('检测结果作为提示传给视觉模型')}>
+            <Toggle
+              checked={config.mangaDetectorEnabled}
+              onChange={(v) => update({ mangaDetectorEnabled: v })}
+            />
+          </Row>
+        </div>
+        {config.mangaDetectorEnabled && (
+          <div className="mt-3">
+            <Field label={t('检测模型 URL（YOLOv5 / YOLOv8 单类文本检测 ONNX 导出）')}>
+              <Input
+                value={config.mangaDetectorModelUrl}
+                placeholder="https://huggingface.co/.../comic-text-detector.onnx"
+                onChange={(e) => update({ mangaDetectorModelUrl: e.target.value.trim() })}
+              />
+            </Field>
+          </div>
+        )}
+      </Card>
+
+      <Card
+        title={t('PDF 服务端精排翻译（可选）')}
+        desc={t(
+          '配置自部署的 pdf2zh / BabelDOC 服务地址后，文档翻译页会出现「服务端精排翻译」入口：上传 PDF，取回公式排版还原度更高的双语 PDF。留空则仅使用内置的本地排版还原。',
+        )}
+      >
+        <Field label={t('服务地址')}>
+          <Input
+            value={config.pdfServiceUrl}
+            placeholder="http://127.0.0.1:11008"
+            onChange={(e) => update({ pdfServiceUrl: e.target.value.trim() })}
+          />
+        </Field>
       </Card>
     </>
   );

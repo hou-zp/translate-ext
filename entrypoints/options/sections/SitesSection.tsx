@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, Card, Field, Input, Select, useToast } from '../../../src/components/ui';
+import { Button, Card, Field, Input, Select, Toggle, useToast } from '../../../src/components/ui';
 import type { SiteRule } from '../../../src/core/config';
+import { BUILTIN_RULES } from '../../../src/core/builtin-rules';
+import { refreshSubscribedRules } from '../../../src/core/rules-sync';
 import { t } from '../../../src/core/i18n';
 import { STYLE_OPTIONS, type PanelProps } from '../shared';
 
@@ -150,26 +152,29 @@ export function SitesSection({ config, update }: PanelProps) {
   const refreshSubscription = async () => {
     const url = subUrl.trim();
     if (!url) {
-      update({ ruleSubscribeUrl: '', subscribedRules: [] });
+      update({ ruleSubscribeUrl: '', subscribedRules: [], subscribedRulesHash: '', subscribedRulesUpdatedAt: 0 });
       toast(t('已清除订阅'), 'success');
       return;
     }
     setFetching(true);
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: unknown = await res.json();
-      if (!Array.isArray(data)) throw new Error(t('JSON 顶层必须是规则数组'));
-      const rules = (data as SiteRule[]).filter(
-        (r) => r && typeof r.pattern === 'string' && r.pattern.length > 0,
+    const res = await refreshSubscribedRules(url);
+    setFetching(false);
+    if (res.ok) {
+      toast(
+        res.updated
+          ? `${t('订阅成功，获取')} ${res.count} ${t('条规则')}`
+          : t('订阅内容无变化'),
+        'success',
       );
-      update({ ruleSubscribeUrl: url, subscribedRules: rules });
-      toast(`${t('订阅成功，获取')} ${rules.length} ${t('条规则')}`, 'success');
-    } catch (err) {
-      toast(`${t('订阅失败')}：${err instanceof Error ? err.message : String(err)}`, 'error');
-    } finally {
-      setFetching(false);
+    } else {
+      toast(`${t('订阅失败')}：${res.error}`, 'error');
     }
+  };
+
+  const toggleBuiltin = (pattern: string, enabled: boolean) => {
+    const disabled = config.disabledBuiltinRules.filter((p) => p !== pattern);
+    if (!enabled) disabled.push(pattern);
+    update({ disabledBuiltinRules: disabled });
   };
 
   return (
@@ -266,7 +271,39 @@ export function SitesSection({ config, update }: PanelProps) {
         <p className="text-xs text-ink-3">
           {t('当前已订阅')} {config.subscribedRules.length} {t('条规则')}
           {config.ruleSubscribeUrl ? `（${t('来自')} ${config.ruleSubscribeUrl}）` : ''}
+          {config.subscribedRulesUpdatedAt > 0 &&
+            ` · ${t('上次刷新')} ${new Date(config.subscribedRulesUpdatedAt).toLocaleString()}`}
         </p>
+        {config.ruleSubscribeUrl && (
+          <p className="mt-1 text-xs text-ink-3">{t('订阅每 24 小时在后台自动刷新。')}</p>
+        )}
+      </Card>
+
+      <Card
+        title={t('内置官方规则')}
+        desc={t(
+          '扩展自带的主流站点适配规则（排除导航 / 代码 / 公式等），优先级低于本地规则与订阅规则，可单条关闭。',
+        )}
+      >
+        <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
+          {BUILTIN_RULES.map((rule) => {
+            const enabled = !config.disabledBuiltinRules.includes(rule.pattern);
+            return (
+              <div
+                key={rule.pattern}
+                className={`flex items-center justify-between rounded-lg border border-line px-3 py-2 ${
+                  enabled ? '' : 'opacity-50'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="text-sm text-ink">{rule.pattern}</div>
+                  <div className="truncate text-xs text-ink-3">{ruleSummary(rule)}</div>
+                </div>
+                <Toggle checked={enabled} onChange={(v) => toggleBuiltin(rule.pattern, v)} />
+              </div>
+            );
+          })}
+        </div>
       </Card>
     </>
   );

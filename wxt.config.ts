@@ -1,10 +1,25 @@
 import { defineConfig } from 'wxt';
 import tailwindcss from '@tailwindcss/vite';
 
+/**
+ * The ONNX wasm binary is downloaded at runtime and cached in OPFS
+ * (see src/core/manga-detector.ts), so drop the copy the bundler emits.
+ */
+function dropBundledOrtWasm() {
+  return {
+    name: 'drop-bundled-ort-wasm',
+    generateBundle(_opts: unknown, bundle: Record<string, unknown>) {
+      for (const name of Object.keys(bundle)) {
+        if (/ort-wasm.*\.wasm$/.test(name)) delete bundle[name];
+      }
+    },
+  };
+}
+
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   vite: () => ({
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), dropBundledOrtWasm()],
   }),
   manifest: ({ browser }) => ({
     name: '__MSG_extName__',
@@ -17,9 +32,18 @@ export default defineConfig({
       'scripting',
       'contextMenus',
       'tabs',
-      // side panel API is chromium-only
-      ...(browser === 'chrome' || browser === 'edge' ? ['sidePanel'] : []),
+      'alarms',
+      // side panel + offscreen APIs are chromium-only
+      ...(browser === 'chrome' || browser === 'edge' ? ['sidePanel', 'offscreen'] : []),
     ],
+    // wasm-unsafe-eval: local ONNX inference (manga text detector, chromium MV3)
+    ...(browser === 'chrome' || browser === 'edge'
+      ? {
+          content_security_policy: {
+            extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+          },
+        }
+      : {}),
     ...(browser === 'chrome' || browser === 'edge'
       ? { side_panel: { default_path: 'sidepanel.html' } }
       : {}),

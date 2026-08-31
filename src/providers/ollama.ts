@@ -121,6 +121,13 @@ export const ollamaProvider: Provider = {
   async translate(texts, from, to, cfg, opts) {
     return translateViaChat(makeChat(cfg), texts, from, to, opts);
   },
+  chat(cfg) {
+    return makeChat(cfg);
+  },
+  vision(cfg, prompt, imageDataUrl) {
+    // Ollama wants the raw base64 without the data: prefix
+    return ollamaVision(cfg, prompt, imageDataUrl.slice(imageDataUrl.indexOf(',') + 1));
+  },
   async test(cfg) {
     try {
       const models = await listOllamaModels(cfg);
