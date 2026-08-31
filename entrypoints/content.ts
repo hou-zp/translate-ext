@@ -21,6 +21,21 @@ import { injectStyles } from '../src/content/styles';
 import { VideoCaptionWatcher } from '../src/content/video-captions';
 import { YouTubeSubtitles } from '../src/content/youtube';
 
+const PAGE_TEXT_LIMIT = 16000;
+
+/** Readable page text for the side-panel Q&A. Prefers the main content area. */
+function extractPageText(): { title: string; url: string; text: string } {
+  const main = document.querySelector<HTMLElement>('article, main, [role="main"]');
+  // Fall back to <body> when the "main" area is suspiciously small (nav shells etc.)
+  const root = main && main.innerText.length > 400 ? main : document.body;
+  const text = root.innerText
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, PAGE_TEXT_LIMIT);
+  return { title: document.title, url: location.href, text };
+}
+
 export default defineContentScript({
   matches: ['<all_urls>'],
   allFrames: true,
@@ -101,6 +116,8 @@ export default defineContentScript({
         total: controller.totalCount,
         done: controller.doneCount,
       }),
+      // Only the top frame answers, so iframes can't shadow the page content.
+      ...(isTopFrame ? { getPageText: () => extractPageText() } : {}),
       translateSelection: async ({ text }) => {
         await bubble?.translateCurrentSelection(text);
       },

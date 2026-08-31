@@ -4,8 +4,10 @@ import { TranslationCache, cacheKey } from '../src/core/cache';
 import { loadConfig, saveConfig, type AppConfig, type ProviderId } from '../src/core/config';
 import {
   onBackgroundMessage,
+  PAGE_CHAT_PORT_NAME,
   STREAM_PORT_NAME,
   type BatchItemError,
+  type PageChatReq,
   type StreamEvent,
   type StreamTranslateReq,
   type TranslateBatchReq,
@@ -498,6 +500,53 @@ export default defineBackground(() => {
         const full = out[0];
         if (typeof full === 'string' && full.length > 0) send({ kind: 'done', full });
         else send({ kind: 'error', message: '翻译服务未返回内容' });
+      } catch (err) {
+        send({ kind: 'error', message: classifyError(err).message });
+      }
+    });
+  });
+
+  // ---- page Q&A chat port (side panel) ----
+  browser.runtime.onConnect.addListener((port) => {
+    if (port.name !== PAGE_CHAT_PORT_NAME) return;
+    port.onMessage.addListener(async (raw: unknown) => {
+      const req = raw as PageChatReq;
+      const send = (ev: StreamEvent) => {
+        try {
+          port.postMessage(ev);
+        } catch {
+          // port closed by client
+        }
+      };
+      try {
+        const cfg = await loadConfig();
+        const { chat } = refineChat(cfg);
+        const langName = langEnglishName(cfg.targetLang);
+        const system =
+          `You are a reading assistant inside a browser extension. The user is viewing ` +
+          `the web page below. Answer questions and write summaries strictly based on ` +
+          `the page content; if the page does not contain the answer, say so instead of ` +
+          `guessing. Answer in the language of the user's question (default: ${langName}). ` +
+          `Be concise and use plain text (short paragraphs or "-" bullet lists, no markdown headers).\n\n` +
+          `Page title: ${req.page.title}\nURL: ${req.page.url}\n\nPage content:\n${req.page.text}`;
+        const history = req.history.slice(-8).map((tn) => ({ role: tn.role, content: tn.content }));
+        let acc = '';
+        const full = await chat(
+          [
+            { role: 'system', content: system },
+            ...history,
+            { role: 'user', content: req.question },
+          ],
+          {
+            onDelta: (d) => {
+              acc += d;
+              send({ kind: 'delta', text: d });
+            },
+          },
+        );
+        const answer = (full || acc).trim();
+        if (answer) send({ kind: 'done', full: answer });
+        else send({ kind: 'error', message: 'AI 未返回内容' });
       } catch (err) {
         send({ kind: 'error', message: classifyError(err).message });
       }

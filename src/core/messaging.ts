@@ -98,6 +98,8 @@ export type CsProtocol = {
   translatePage: { req: void; res: { translated: boolean } };
   restorePage: { req: void; res: void };
   getPageState: { req: void; res: { translated: boolean; total: number; done: number } };
+  /** Readable page text for the side-panel Q&A (handled in the top frame only) */
+  getPageText: { req: void; res: { title: string; url: string; text: string } };
   translateSelection: { req: { text?: string }; res: void };
   translateImage: { req: { srcUrl: string }; res: void };
   /** Repaint a single image with translations filled into its text regions */
@@ -231,6 +233,54 @@ export function streamTranslate(
   onEvent: (ev: StreamEvent) => void,
 ): () => void {
   const port = browser.runtime.connect({ name: STREAM_PORT_NAME });
+  port.onMessage.addListener((ev: unknown) => {
+    const e = ev as StreamEvent;
+    onEvent(e);
+    if (e.kind === 'done' || e.kind === 'error') {
+      try {
+        port.disconnect();
+      } catch {
+        /* already closed */
+      }
+    }
+  });
+  port.postMessage(req);
+  return () => {
+    try {
+      port.disconnect();
+    } catch {
+      /* noop */
+    }
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Page Q&A chat over a long-lived port (used by the side panel)
+// ---------------------------------------------------------------------------
+
+export const PAGE_CHAT_PORT_NAME = 'tx-page-chat';
+
+export interface PageChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface PageChatReq {
+  question: string;
+  /** Prior turns of this conversation (already answered) */
+  history: PageChatTurn[];
+  page: { title: string; url: string; text: string };
+}
+
+/**
+ * Ask the AI a question about a page, streaming the answer. Returns a cancel
+ * function that disconnects the port.
+ */
+export function streamPageChat(
+  req: PageChatReq,
+  onEvent: (ev: StreamEvent) => void,
+): () => void {
+  const port = browser.runtime.connect({ name: PAGE_CHAT_PORT_NAME });
   port.onMessage.addListener((ev: unknown) => {
     const e = ev as StreamEvent;
     onEvent(e);

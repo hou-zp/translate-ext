@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { browser } from 'wxt/browser';
-import { Button, useToast } from '../../src/components/ui';
+import { Button, Segmented, useToast } from '../../src/components/ui';
 import { useConfig } from '../../src/components/useConfig';
 import { t } from '../../src/core/i18n';
 import { sendToTab } from '../../src/core/messaging';
 import TextApp from '../text-translate/App';
+import PageChat from './PageChat';
 
 interface PageState {
   translated: boolean;
@@ -24,6 +25,7 @@ export default function App() {
   const [pageTitle, setPageTitle] = useState('');
   const [state, setState] = useState<PageState | null>(null);
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState<'translate' | 'chat'>('translate');
 
   const refresh = async () => {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
@@ -68,8 +70,8 @@ export default function App() {
     state && state.total > 0 ? Math.round((state.done / state.total) * 100) : null;
 
   return (
-    <div className="min-h-screen">
-      <div className="sticky top-0 z-10 border-b border-line bg-card px-4 py-3 shadow-card">
+    <div className="flex h-screen flex-col">
+      <div className="border-b border-line bg-card px-4 py-3 shadow-card">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-xs font-medium text-ink-3">{t('当前页面')}</span>
           <span className="max-w-[60%] truncate text-xs text-ink-3" title={pageTitle}>
@@ -105,8 +107,23 @@ export default function App() {
             </span>
           </div>
         )}
+        <Segmented
+          className="mt-2.5"
+          value={view}
+          onChange={(v) => setView(v as 'translate' | 'chat')}
+          options={[
+            { value: 'translate', label: t('文本翻译') },
+            { value: 'chat', label: t('页面问答') },
+          ]}
+        />
       </div>
-      <TextApp />
+      {/* Both panels stay mounted so switching tabs never loses state. */}
+      <div className={view === 'translate' ? 'flex-1 overflow-y-auto' : 'hidden'}>
+        <TextApp />
+      </div>
+      <div className={view === 'chat' ? 'min-h-0 flex-1' : 'hidden'}>
+        <PageChat />
+      </div>
     </div>
   );
 }
