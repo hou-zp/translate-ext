@@ -6,12 +6,15 @@ import { copyText } from "../lib/translate";
 import { SectionHead } from "./Hero";
 import { IconCheck, IconCopy, IconPlus, Logo } from "./Icons";
 
+const RELEASES = "https://github.com/hou-zp/translate-ext/releases/latest";
+
 const STEPS = [
   {
     n: "01",
-    t: "获取构建包",
-    d: "克隆仓库并本地构建，产物在 .output/chrome-mv3 目录（或直接从发布页下载 zip）。",
-    code: "git clone && npm run build",
+    t: "下载扩展包",
+    d: "从 GitHub Releases 下载对应浏览器的 zip（chrome / firefox / safari），Chrome / Edge 用户先解压备用。",
+    code: "releases/latest → chrome.zip",
+    href: RELEASES,
   },
   {
     n: "02",
@@ -47,7 +50,7 @@ export function Install() {
       <SectionHead
         index="04 / install"
         title="四步装进浏览器"
-        desc="目标形态为 Manifest V3 解压加载；本页为交互概念稿，扩展包尚未公开发布。"
+        desc="Manifest V3，直接从 GitHub Releases 下载即可；也支持 Firefox / Safari。"
       />
       <div className="relative grid gap-4 md:grid-cols-4">
         <span className="pointer-events-none absolute left-0 right-0 top-7 hidden h-px bg-gradient-to-r from-transparent via-white/15 to-transparent md:block" />
@@ -59,22 +62,43 @@ export function Install() {
               </p>
               <h3 className="mt-3 font-display text-[16px] font-bold text-bone">{s.t}</h3>
               <p className="mt-2 min-h-[60px] text-[12.5px] leading-relaxed text-mute">{s.d}</p>
-              <button
-                onClick={() => doCopy(s.code)}
-                title="复制"
-                className="mt-3 flex w-full items-center justify-between rounded border border-white/10 bg-[#0b0d10] px-2.5 py-1.5 font-mono text-[10.5px] text-bone-dim transition-colors hover:border-white/25 hover:text-bone"
-              >
-                <span className="truncate">{s.code}</span>
-                {copied === s.code ? <IconCheck className="h-3.5 w-3.5 shrink-0 text-[#57a79b]" /> : <IconCopy className="h-3.5 w-3.5 shrink-0" />}
-              </button>
+              {"href" in s && s.href ? (
+                <a
+                  href={s.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 flex w-full items-center justify-between rounded border border-[#d5482f]/50 bg-[#d5482f]/10 px-2.5 py-1.5 font-mono text-[10.5px] text-[#ef6a4c] transition-colors hover:bg-[#d5482f]/20"
+                >
+                  <span className="truncate">{s.code}</span>
+                  <span className="shrink-0">→</span>
+                </a>
+              ) : (
+                <button
+                  onClick={() => doCopy(s.code)}
+                  title="复制"
+                  className="mt-3 flex w-full items-center justify-between rounded border border-white/10 bg-[#0b0d10] px-2.5 py-1.5 font-mono text-[10.5px] text-bone-dim transition-colors hover:border-white/25 hover:text-bone"
+                >
+                  <span className="truncate">{s.code}</span>
+                  {copied === s.code ? <IconCheck className="h-3.5 w-3.5 shrink-0 text-[#57a79b]" /> : <IconCopy className="h-3.5 w-3.5 shrink-0" />}
+                </button>
+              )}
             </div>
           </Reveal>
         ))}
       </div>
       <Reveal delay={120}>
-        <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <a
+            href={RELEASES}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 rounded-md bg-[#d5482f] px-4 py-2 text-[13px] font-medium text-[#f5f1e8] transition-all hover:-translate-y-px hover:bg-[#ef6a4c]"
+          >
+            前往 Releases 下载
+            <span aria-hidden="true">→</span>
+          </a>
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-mute">适配目标</span>
-          {["Chrome 116+", "Edge", "Firefox · MV3", "Safari · 用户脚本版", "Kiwi · Android"].map((t) => (
+          {["Chrome", "Edge", "Firefox", "Safari"].map((t) => (
             <span
               key={t}
               className="rounded-full border border-white/10 px-3 py-1 font-mono text-[10.5px] text-bone-dim transition-colors hover:border-[#57a79b]/60 hover:text-[#57a79b]"
