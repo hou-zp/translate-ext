@@ -65,7 +65,7 @@ function SiteRuleEditor(props: {
   const [rule, setRule] = useState<SiteRule>(props.rule);
   const set = (patch: Partial<SiteRule>) => setRule((r) => ({ ...r, ...patch }));
   return (
-    <div className="mt-3 rounded-xl border border-brand/30 bg-brand-soft/40 p-4 animate-collapse-in">
+    <div className="mt-3 rounded-md border border-brand/40 bg-brand-soft p-4 animate-collapse-in">
       <Field label={t('站点（hostname，自动匹配子域名）')}>
         <Input
           value={rule.pattern}
@@ -211,7 +211,7 @@ export function SitesSection({ config, update }: PanelProps) {
               <span className="flex shrink-0 gap-2 text-xs">
                 <button
                   type="button"
-                  className="text-brand hover:underline"
+                  className="text-brand-hi hover:underline"
                   onClick={() => setEditing({ rule: { ...rule }, index: i })}
                 >
                   {t('编辑')}
@@ -232,7 +232,7 @@ export function SitesSection({ config, update }: PanelProps) {
         </div>
         <button
           type="button"
-          className="mt-3 flex items-center gap-1 rounded-lg border border-dashed border-line-strong px-4 py-2 text-sm text-ink-3 transition-colors hover:border-brand hover:text-brand"
+          className="mt-3 flex items-center gap-1 rounded-lg border border-dashed border-line-strong px-4 py-2 text-sm text-ink-3 transition-colors hover:border-brand/60 hover:text-brand-hi"
           onClick={() => setEditing({ rule: { ...EMPTY_RULE }, index: -1 })}
         >
           <Plus className="h-3.5 w-3.5" />

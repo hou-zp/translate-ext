@@ -49,7 +49,7 @@ export function ToastProvider(props: { children: ReactNode }) {
           return (
             <div
               key={item.id}
-              className="flex max-w-[90%] items-center gap-2 rounded-xl border border-line bg-card px-3.5 py-2 text-xs text-ink shadow-popover animate-slide-up"
+              className="flex max-w-[90%] items-center gap-2 rounded-md border border-line-strong bg-card px-3.5 py-2 text-xs text-ink shadow-popover animate-slide-up"
             >
               <IconCmp className={`h-3.5 w-3.5 shrink-0 ${KIND_CLS[item.kind]}`} />
               {item.text}

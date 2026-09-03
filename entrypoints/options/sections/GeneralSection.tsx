@@ -56,7 +56,7 @@ export function GeneralSection({ config, update }: PanelProps) {
               onClick={() => update({ translationStyle: s.value })}
               className={`rounded-xl border p-3 text-left transition-colors duration-150 ${
                 config.translationStyle === s.value
-                  ? 'border-brand bg-brand-soft ring-1 ring-brand/40'
+                  ? 'border-brand/60 bg-brand-soft'
                   : 'border-line hover:bg-fill'
               }`}
             >
@@ -70,7 +70,7 @@ export function GeneralSection({ config, update }: PanelProps) {
             </button>
           ))}
         </div>
-        <div className="mt-4 rounded-xl bg-fill p-4 text-sm leading-7">
+        <div className="mt-4 rounded-md bg-fill/60 p-4 text-sm leading-7">
           <p className="text-ink">The quick brown fox jumps over the lazy dog.</p>
           <p
             className="mt-1 text-ink"

@@ -64,7 +64,7 @@ export default function App() {
           {(file || batchFiles) && (
             <button
               type="button"
-              className="text-sm text-brand hover:underline"
+              className="text-sm text-brand-hi hover:underline"
               onClick={() => {
                 setFile(null);
                 setKind(null);

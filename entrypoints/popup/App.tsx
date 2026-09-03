@@ -147,17 +147,15 @@ export default function App() {
   };
 
   const featureBtn = (active: boolean) =>
-    `flex items-center gap-2 rounded-xl border px-3.5 py-3 text-sm transition-colors duration-150 ${
+    `flex items-center gap-2 rounded-md border px-3.5 py-3 text-[13px] transition-colors duration-150 ${
       active
-        ? 'border-brand/40 bg-brand-soft text-brand'
-        : 'border-line bg-card text-ink-2 hover:bg-fill hover:text-ink'
+        ? 'border-brand/50 bg-brand-soft text-brand-hi'
+        : 'border-line bg-card/80 text-ink-2 hover:border-line-strong hover:bg-fill/60 hover:text-ink'
     }`;
 
   const moreBtn = (active?: boolean) =>
-    `flex flex-col items-center gap-1.5 rounded-xl px-1 py-2.5 text-xs transition-colors duration-150 ${
-      active
-        ? 'bg-brand-soft text-brand'
-        : 'bg-fill text-ink-2 hover:bg-fill-2 hover:text-ink'
+    `flex flex-col items-center gap-1.5 rounded-md px-1 py-2.5 text-[11px] transition-colors duration-150 ${
+      active ? 'bg-brand-soft text-brand-hi' : 'bg-fill/60 text-ink-2 hover:bg-fill-2 hover:text-ink'
     }`;
 
   return (
@@ -166,19 +164,19 @@ export default function App() {
       <div className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <img src="/icon/32.png" alt="" className="h-5 w-5 shrink-0" />
-          <span className="truncate text-sm font-semibold">AI 沉浸翻译</span>
+          <span className="truncate font-display text-sm font-bold tracking-wide">AI 沉浸翻译</span>
         </div>
         {siteHost && (
           <div ref={siteMenuRef} className="relative">
             <button
               type="button"
               onClick={() => setSiteMenuOpen((v) => !v)}
-              className={`flex max-w-40 items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors ${
+              className={`flex max-w-40 items-center gap-1 rounded-full px-2.5 py-1 font-mono text-[10.5px] transition-colors ${
                 currentSiteMode === 'never'
                   ? 'bg-danger/10 text-danger'
                   : currentSiteMode === 'always'
-                    ? 'bg-brand-soft text-brand'
-                    : 'bg-fill text-ink-2 hover:bg-fill-2'
+                    ? 'bg-brand-soft text-brand-hi'
+                    : 'bg-fill/60 text-ink-3 hover:bg-fill-2 hover:text-ink-2'
               }`}
             >
               <Globe className="h-3 w-3 shrink-0" />
@@ -186,11 +184,11 @@ export default function App() {
               <ChevronDown className="h-3 w-3 shrink-0" />
             </button>
             {siteMenuOpen && (
-              <div className="absolute right-0 z-50 mt-1 w-44 rounded-xl border border-line bg-card p-1 shadow-popover animate-pop-in">
+              <div className="absolute right-0 z-50 mt-1 w-44 rounded-md border border-line-strong bg-card p-1 shadow-popover animate-pop-in">
                 <button
                   type="button"
                   onClick={() => setSiteList('always')}
-                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs text-ink-2 hover:bg-fill"
+                  className="flex w-full items-center justify-between rounded px-2.5 py-2 text-xs text-ink-2 hover:bg-fill/60"
                 >
                   {t('自动翻译此站')}
                   <Toggle
@@ -201,7 +199,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setSiteList('never')}
-                  className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs text-ink-2 hover:bg-fill"
+                  className="flex w-full items-center justify-between rounded px-2.5 py-2 text-xs text-ink-2 hover:bg-fill/60"
                 >
                   {t('永不翻译此站')}
                   <Toggle
@@ -217,7 +215,7 @@ export default function App() {
 
       <div className="px-4 pb-4">
         {/* main action */}
-        <div className="mb-3 rounded-2xl border border-line/70 bg-card p-3 shadow-card">
+        <div className="mb-3 rounded-lg border border-line bg-card/80 p-3 shadow-card">
           <Button
             variant="primary"
             size="lg"
@@ -233,13 +231,13 @@ export default function App() {
           </Button>
           {busy && progress && progress.total > 0 && (
             <div className="mt-2.5 flex items-center gap-2 animate-fade-in">
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-fill">
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-fill-2">
                 <div
                   className="h-full rounded-full bg-brand transition-[width] duration-300"
                   style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }}
                 />
               </div>
-              <span className="text-[11px] tabular-nums text-ink-3">
+              <span className="font-mono text-[10.5px] tabular-nums text-ink-3">
                 {progress.done}/{progress.total}
               </span>
             </div>
@@ -256,7 +254,7 @@ export default function App() {
         </div>
 
         {/* language pair + service */}
-        <div className="mb-3 rounded-2xl border border-line/70 bg-card px-4 py-1 shadow-card">
+        <div className="mb-3 rounded-lg border border-line bg-card/80 px-4 py-1 shadow-card">
           <div className="flex items-center gap-2 py-3">
             <Select
               className="min-w-0 flex-1"
@@ -269,7 +267,7 @@ export default function App() {
               title={t('互换语言')}
               onClick={swapLangs}
               disabled={config.sourceLang === 'auto'}
-              className="rounded-lg p-1.5 text-ink-3 transition-colors hover:bg-fill hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md p-1.5 text-ink-3 transition-colors hover:bg-fill/60 hover:text-brand-hi disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ArrowRightLeft className="h-3.5 w-3.5" />
             </button>
@@ -283,9 +281,9 @@ export default function App() {
               }))}
             />
           </div>
-          <div className="border-t border-line/70" />
+          <div className="border-t border-line" />
           <div className="flex items-center justify-between py-3">
-            <span className="flex items-center gap-1.5 text-sm text-ink-2">
+            <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
               <Plug className="h-4 w-4 text-ink-3" />
               {t('翻译服务')}
             </span>
@@ -295,9 +293,9 @@ export default function App() {
               options={PROVIDER_LIST.map((p) => ({ value: p.id, label: p.name }))}
             />
           </div>
-          <div className="border-t border-line/70" />
+          <div className="border-t border-line" />
           <div className="flex items-center justify-between py-3">
-            <span className="flex items-center gap-1.5 text-sm text-ink-2">
+            <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
               <Sparkles className="h-4 w-4 text-ink-3" />
               {t('AI 专家')}
             </span>
@@ -307,9 +305,9 @@ export default function App() {
               options={experts.map((e) => ({ value: e.id, label: e.name }))}
             />
           </div>
-          <div className="border-t border-line/70" />
+          <div className="border-t border-line" />
           <div className="flex items-center justify-between py-3">
-            <span className="flex items-center gap-1.5 text-sm text-ink-2">
+            <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
               <Sparkles className="h-4 w-4 text-ink-3" />
               {t('启用 AI 精翻')}
             </span>
@@ -323,7 +321,7 @@ export default function App() {
         {/* feature grid */}
         <div className="mb-3 grid grid-cols-2 gap-2.5">
           <button type="button" onClick={() => openPage('pdf-viewer')} className={featureBtn(false)}>
-            <FileText className="h-4 w-4 text-brand" />
+            <FileText className="h-4 w-4 text-brand-hi" />
             {t('文档翻译')}
           </button>
           <button
@@ -331,7 +329,7 @@ export default function App() {
             onClick={() => openPage('text-translate')}
             className={featureBtn(false)}
           >
-            <Type className="h-4 w-4 text-brand" />
+            <Type className="h-4 w-4 text-brand-hi" />
             {t('文本翻译')}
           </button>
           <button
@@ -353,7 +351,7 @@ export default function App() {
         </div>
 
         {/* footer */}
-        <div className="flex items-center justify-between border-t border-line/70 pt-3 text-xs text-ink-3">
+        <div className="flex items-center justify-between border-t border-line pt-3 font-mono text-[10.5px] text-ink-3">
           <button
             type="button"
             onClick={() => openPage('options')}
@@ -362,7 +360,7 @@ export default function App() {
             <Settings className="h-3.5 w-3.5" />
             {t('设置')}
           </button>
-          <span>v{version}</span>
+          <span className="tracking-[0.14em]">v{version}</span>
           <button
             type="button"
             onClick={() => setMoreOpen((v) => !v)}

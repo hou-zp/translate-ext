@@ -68,7 +68,7 @@ function PdfPageCanvas(props: {
           return (
             <div
               key={key}
-              className="absolute overflow-hidden bg-white/95 leading-snug text-[#111827]"
+              className="absolute overflow-hidden bg-paper/95 leading-snug text-inktext"
               style={{
                 left: `${para.left * 100}%`,
                 top: `${para.top * 100}%`,
@@ -324,7 +324,7 @@ ${body}
 
   return (
     <div>
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-card/80 px-4 py-3 shadow-card">
         <span className="text-sm text-ink-2">
           {t('共')} {doc.numPages} {t('页')} · {allItems.length} {t('段')}
         </span>
@@ -416,12 +416,12 @@ ${body}
 
         {mode === 'side' && (
           <aside className="w-[420px] shrink-0">
-            <div className="sticky top-20 max-h-[calc(100vh-120px)] overflow-auto rounded-xl border border-line/70 bg-card p-4 shadow-card">
+            <div className="sticky top-20 max-h-[calc(100vh-120px)] overflow-auto rounded-md border border-line bg-card/80 p-4 shadow-card">
               {pages.map((page) => (
                 <div key={page.pageIndex} className="mb-4">
                   <button
                     type="button"
-                    className="mb-2 text-xs font-semibold text-brand hover:underline"
+                    className="mb-2 text-xs font-semibold text-brand-hi hover:underline"
                     onClick={() =>
                       pageRefs.current[page.pageIndex]?.scrollIntoView({
                         behavior: 'smooth',

@@ -177,7 +177,7 @@ export default function App() {
 
   if (!config) return null;
 
-  const paneCls = 'rounded-2xl border border-line/70 bg-card p-4 shadow-card';
+  const paneCls = 'rounded-lg border border-line bg-card/80 p-4 shadow-card';
 
   return (
     <div className="mx-auto min-h-screen max-w-5xl px-6 py-8">
@@ -244,7 +244,7 @@ export default function App() {
           onClick={swap}
           disabled={config.sourceLang === 'auto'}
           title={t('互换语言')}
-          className="rounded-full border border-line bg-card p-2 text-ink-3 shadow-sm transition-colors hover:text-brand disabled:opacity-40"
+          className="rounded-full border border-line bg-card p-2 text-ink-3 shadow-sm transition-colors hover:text-brand-hi disabled:opacity-40"
         >
           <ArrowRightLeft className="h-4 w-4" />
         </button>
@@ -399,7 +399,7 @@ export default function App() {
                     setResult(h.result);
                     setShowHistory(false);
                   }}
-                  className="block w-full rounded-xl border border-line px-3.5 py-2.5 text-left transition-colors hover:border-brand/40 hover:bg-fill"
+                  className="block w-full rounded-md border border-line px-3.5 py-2.5 text-left transition-colors hover:border-brand/40 hover:bg-fill"
                 >
                   <div className="mb-1 line-clamp-1 text-sm text-ink">{h.source}</div>
                   <div className="line-clamp-1 text-xs text-ink-3">{h.result}</div>

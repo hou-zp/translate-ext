@@ -121,7 +121,7 @@ export function ProvidersSection({ config, update }: PanelProps) {
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-semibold text-ink">{p.name}</h2>
                 {isCurrent && (
-                  <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand">
+                  <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[11px] font-medium text-brand-hi">
                     {t('当前使用')}
                   </span>
                 )}
@@ -156,7 +156,7 @@ export function ProvidersSection({ config, update }: PanelProps) {
                     type="button"
                     className={`rounded-full border px-2.5 py-0.5 text-[11px] transition-colors ${
                       config.providers.openai?.baseUrl === preset.baseUrl
-                        ? 'border-brand bg-brand-soft text-brand'
+                        ? 'border-brand/50 bg-brand-soft text-brand-hi-hi'
                         : 'border-line text-ink-2 hover:bg-fill'
                     }`}
                     onClick={() =>

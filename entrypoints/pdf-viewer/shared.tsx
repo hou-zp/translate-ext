@@ -57,7 +57,7 @@ export function BilingualList(props: {
         return (
           <div
             key={p.key}
-            className="rounded-xl border border-line/70 bg-card px-5 py-4 shadow-card"
+            className="rounded-md border border-line bg-card/80 px-5 py-4 shadow-card"
           >
             <p className="mb-1.5 text-sm leading-6 text-ink-2">{p.text}</p>
             <p className="text-[15px] leading-7 text-ink">
