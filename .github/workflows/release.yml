@@ -54,10 +54,7 @@ jobs:
           if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
             VERSION=$(node -p "require('./package.json').version")
           fi
-          gh release create "v${VERSION}" release/*.zip \
-            --title "translate-ext v${VERSION}" \
-            --generate-notes \
-            --notes-before-body "$(cat <<'EOF'
+          cat > notes.md <<'EOF'
           ### 安装方法
 
           **Chrome / Edge** — 下载 `chrome.zip` 并解压到固定目录 → 打开 `chrome://extensions` → 开启「开发者模式」→「加载已解压的扩展程序」选择解压目录。（Edge 在 `edge://extensions`，同样流程）
@@ -65,5 +62,15 @@ jobs:
           **Firefox** — 下载 `firefox.zip` → 打开 `about:debugging#/runtime/this-firefox` →「临时载入附加组件」选择 zip；或解压后通过 `web-ext run` 使用。
 
           **Safari** — 下载 `safari.zip`，用 Xcode `xcrun safari-web-extension-converter` 封装为 App 后在 Safari 设置中启用（详见仓库 README）。
+
+          ---
+          完整变更见 [提交历史](https://github.com/${{ github.repository }}/commits/v${VERSION})。
           EOF
-          )" || gh release upload "v${VERSION}" release/*.zip --clobber
+          if gh release view "v${VERSION}" > /dev/null 2>&1; then
+            gh release upload "v${VERSION}" release/*.zip --clobber
+          else
+            gh release create "v${VERSION}" release/*.zip \
+              --title "translate-ext v${VERSION}" \
+              --notes-file notes.md \
+              --latest
+          fi
