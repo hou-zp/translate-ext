@@ -1,0 +1,294 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-ink-950: #0b0d10;
+  --color-ink-900: #10141a;
+  --color-ink-850: #141920;
+  --color-ink-800: #1a2028;
+  --color-ink-700: #232b35;
+  --color-ink-600: #313b47;
+  --color-ink-500: #465261;
+
+  --color-bone: #e9e4d8;
+  --color-bone-dim: #b6b1a6;
+  --color-mute: #8c95a0;
+
+  --color-paper: #f5f1e8;
+  --color-paper-dim: #ece6d8;
+  --color-paper-line: #d9d1bf;
+  --color-inktext: #22262c;
+  --color-inktext-dim: #5d6169;
+
+  --color-cinnabar: #d5482f;
+  --color-cinnabar-hi: #ef6a4c;
+  --color-jade: #2e7d74;
+  --color-jade-hi: #57a79b;
+  --color-gold: #b98a3e;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-ink-950);
+  color: var(--color-bone);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(213, 72, 47, 0.85);
+  color: #f5f1e8;
+}
+
+/* ---------- ambient layers ---------- */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(233, 228, 216, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(233, 228, 216, 0.045) 1px, transparent 1px);
+  background-size: 72px 72px;
+}
+
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- reveal on scroll ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.75s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.75s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- micro keyframes ---------- */
+@keyframes transIn {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.trans-in {
+  animation: transIn 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes sepDraw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.sep-draw {
+  transform-origin: left center;
+  animation: sepDraw 0.6s 0.08s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pop-in {
+  transform-origin: top right;
+  animation: popIn 0.22s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.toast-in {
+  animation: toastIn 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes kenburns {
+  from {
+    transform: scale(1) translate(0, 0);
+  }
+  to {
+    transform: scale(1.09) translate(-1.6%, 1.8%);
+  }
+}
+.kenburns {
+  animation: kenburns 22s ease-in-out infinite alternate;
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(87, 167, 155, 0.5);
+  }
+  50% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 5px rgba(87, 167, 155, 0);
+  }
+}
+.pulse-dot {
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+@keyframes spaceGlow {
+  0%,
+  55%,
+  100% {
+    background: rgba(233, 228, 216, 0.06);
+    color: var(--color-mute);
+    transform: translateY(0);
+  }
+  18% {
+    background: rgba(213, 72, 47, 0.9);
+    color: #f5f1e8;
+    transform: translateY(2px);
+  }
+  36% {
+    background: rgba(233, 228, 216, 0.06);
+    color: var(--color-mute);
+  }
+}
+.space-key {
+  animation: spaceGlow 2.6s ease-in-out infinite;
+}
+
+@keyframes selSweep {
+  0% {
+    width: 4%;
+    opacity: 0.9;
+  }
+  62% {
+    width: 92%;
+    opacity: 0.9;
+  }
+  82% {
+    width: 92%;
+    opacity: 0.25;
+  }
+  100% {
+    width: 4%;
+    opacity: 0;
+  }
+}
+.sel-sweep {
+  animation: selSweep 3.4s cubic-bezier(0.4, 0, 0.3, 1) infinite;
+}
+
+@keyframes floatY {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-7px);
+  }
+}
+.float-y {
+  animation: floatY 3.2s ease-in-out infinite alternate;
+}
+
+/* ---------- widgets ---------- */
+.kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(233, 228, 216, 0.22);
+  border-bottom-width: 2px;
+  background: rgba(233, 228, 216, 0.07);
+  color: var(--color-bone);
+  white-space: nowrap;
+}
+
+.scroll-slim::-webkit-scrollbar {
+  width: 9px;
+}
+.scroll-slim::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: #c8bfa9;
+  border-radius: 8px;
+  border: 2px solid var(--color-paper);
+}
+.scroll-dark::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-dark::-webkit-scrollbar-thumb {
+  background: var(--color-ink-600);
+  border-radius: 8px;
+}
+
+.underline-swipe {
+  background-image: linear-gradient(rgba(213, 72, 47, 0.9), rgba(213, 72, 47, 0.9));
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  background-size: 100% 0.14em;
+}
+
+.acc-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.acc-panel.open {
+  grid-template-rows: 1fr;
+}
+.acc-panel > div {
+  overflow: hidden;
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .kenburns,
+  .sel-sweep,
+  .space-key,
+  .float-y,
+  .pulse-dot {
+    animation: none !important;
+  }
+}
