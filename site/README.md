@@ -32,6 +32,6 @@ npm run typecheck  # TypeScript 类型检查
 
 单文件 `dist/index.html` 可部署到任意静态托管：
 
-- **GitHub Pages**：把 `site/dist` 推到 `gh-pages` 分支，或在仓库 Settings → Pages 指向该分支
+- **GitHub Pages（已自动化）**：`.github/workflows/site.yml` 会在 main 分支 `site/` 有改动时自动构建并部署；首次使用需在仓库 Settings → Pages → Build and deployment → Source 选择 **GitHub Actions**，之后地址为 `https://<user>.github.io/translate-ext/`
 - **Vercel / Netlify**：根目录设 `site/`，构建命令 `npm run build`，产物目录 `dist`
 - **任何对象存储 / 自建服务器**：直接上传 `dist/index.html`
