@@ -32,6 +32,11 @@ npm run typecheck  # TypeScript 类型检查
 
 单文件 `dist/index.html` 可部署到任意静态托管：
 
-- **GitHub Pages（已自动化）**：`.github/workflows/site.yml` 会在 main 分支 `site/` 有改动时自动构建并部署；首次使用需在仓库 Settings → Pages → Build and deployment → Source 选择 **GitHub Actions**，之后地址为 `https://<user>.github.io/translate-ext/`
+- **Cloudflare Pages（已自动化）**：`.github/workflows/site.yml` 会在 main 分支 `site/` 有改动时自动构建并用 wrangler 部署到 Cloudflare Pages。首次使用：
+  1. 注册 [Cloudflare](https://dash.cloudflare.com/sign-up)（免费），记下控制台右下角的 **Account ID**
+  2. 控制台 → My Profile → API Tokens → Create Token，选 **Cloudflare Pages — Edit** 模板，生成 token
+  3. 把两个值加入仓库 **Settings → Secrets and variables → Actions**：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`
+  4. 手动跑一次工作流（Actions → Deploy intro site → Run workflow），之后地址为 `https://translate-ext.pages.dev`
+  （私有仓库用不了 GitHub Free 的 Pages，故选 Cloudflare Pages：免费、不限带宽、支持私有仓库）
 - **Vercel / Netlify**：根目录设 `site/`，构建命令 `npm run build`，产物目录 `dist`
 - **任何对象存储 / 自建服务器**：直接上传 `dist/index.html`

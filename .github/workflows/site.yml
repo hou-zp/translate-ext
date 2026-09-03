@@ -1,8 +1,10 @@
-# 构建介绍页并发布到 GitHub Pages
+# 构建介绍页并发布到 Cloudflare Pages
 # 触发：main 分支上 site/ 目录有改动，或手动运行（Actions → site → Run workflow）
-# 首次使用前需在仓库 Settings → Pages → Build and deployment → Source 选择 "GitHub Actions"
+# 所需 repo secrets（Settings → Secrets and variables → Actions）：
+#   CLOUDFLARE_API_TOKEN   — Cloudflare 控制台创建，模板 "Cloudflare Pages — Edit"
+#   CLOUDFLARE_ACCOUNT_ID  — Cloudflare 控制台右下角 Account ID
 
-name: Deploy intro site to GitHub Pages
+name: Deploy intro site to Cloudflare Pages
 
 on:
   push:
@@ -14,8 +16,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # 同一时刻只跑一个部署，排队中的旧运行自动取消
 concurrency:
@@ -23,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,18 +46,17 @@ jobs:
         working-directory: site
         run: npm run build
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Create Pages project (skip if exists)
+        uses: cloudflare/wrangler-action@v3
         with:
-          path: site/dist
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create translate-ext --production-branch=main
+        continue-on-error: true # 已存在时报错，属预期
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site/dist --project-name=translate-ext --branch=main --commit-dirty=true
