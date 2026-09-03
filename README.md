@@ -25,6 +25,14 @@
 - **云同步**：配置可随浏览器账号自动同步；完整配置 + 生词本可备份到 WebDAV 网盘（坚果云等）
 - 页面悬浮球、右键菜单、键盘快捷键、译文缓存、配置导入导出、中英界面
 
+## 下载安装
+
+到 [Releases](https://github.com/hou-zp/translate-ext/releases) 下载对应浏览器的 zip：
+
+- **Chrome / Edge**：解压 `chrome.zip` → `chrome://extensions` → 开启「开发者模式」→「加载已解压的扩展程序」
+- **Firefox**：`firefox.zip` → `about:debugging#/runtime/this-firefox` →「临时载入附加组件」
+- **Safari**：`safari.zip` → 用 `xcrun safari-web-extension-converter` 封装（见下方构建说明）
+
 ## 开发
 
 ```bash
