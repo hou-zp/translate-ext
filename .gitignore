@@ -6,3 +6,5 @@ node_modules/
 *.log
 .env
 .env.*
+site/node_modules/
+site/dist/
