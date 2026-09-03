@@ -153,7 +153,7 @@ export default function BatchPdfView(props: { files: File[]; config: AppConfig }
         {jobs.map((job, i) => (
           <div
             key={`${job.file.name}-${i}`}
-            className="flex items-center justify-between rounded-xl border border-line bg-card px-4 py-3"
+            className="flex items-center justify-between rounded-md border border-line bg-card/80 px-4 py-3"
           >
             <div className="min-w-0">
               <div className="truncate text-sm text-ink">{job.file.name}</div>

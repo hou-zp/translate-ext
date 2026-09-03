@@ -79,8 +79,8 @@ export function Select(props: {
 
   const triggerCls =
     variant === 'field'
-      ? 'w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink hover:border-line-strong focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20'
-      : 'rounded-md px-1 py-0.5 text-sm text-ink hover:text-brand';
+      ? 'w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink hover:border-line-strong focus-visible:border-brand/60'
+      : 'rounded-md px-1.5 py-1 text-sm text-ink-2 hover:text-brand-hi';
 
   return (
     <div ref={rootRef} className={`relative ${props.className ?? ''}`}>
@@ -102,7 +102,7 @@ export function Select(props: {
         <div
           ref={listRef}
           role="listbox"
-          className={`absolute z-50 max-h-64 w-max min-w-full overflow-auto rounded-xl border border-line bg-card p-1 shadow-popover animate-pop-in ${
+          className={`absolute z-50 max-h-64 w-max min-w-full overflow-auto rounded-md border border-line-strong bg-card p-1 shadow-popover animate-pop-in ${
             dropUp ? 'bottom-full mb-1' : 'top-full mt-1'
           } right-0`}
         >
@@ -115,9 +115,9 @@ export function Select(props: {
               data-idx={i}
               onMouseEnter={() => setActive(i)}
               onClick={() => pick(o.value)}
-              className={`flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-1.5 text-left text-sm whitespace-nowrap ${
+              className={`flex w-full items-center justify-between gap-3 rounded px-2.5 py-1.5 text-left text-sm whitespace-nowrap ${
                 i === active ? 'bg-fill text-ink' : 'text-ink-2'
-              } ${o.value === props.value ? 'font-medium text-brand' : ''}`}
+              } ${o.value === props.value ? 'font-medium text-brand-hi' : ''}`}
             >
               {o.label}
               {o.value === props.value && <Check className="h-3.5 w-3.5 shrink-0" />}

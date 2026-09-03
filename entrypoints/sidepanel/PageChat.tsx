@@ -122,14 +122,14 @@ export default function PageChat() {
             <div className="flex flex-col items-center gap-2">
               <button
                 type="button"
-                className="rounded-full border border-line bg-card px-4 py-1.5 text-xs text-ink-2 transition-colors hover:border-brand hover:text-brand"
+                className="rounded-md border border-line-strong bg-card/80 px-3 py-1.5 text-xs text-ink-2 transition-colors hover:border-brand/60 hover:text-brand-hi"
                 onClick={() => void send(t('请总结这个页面的主要内容'))}
               >
                 {t('总结这个页面')}
               </button>
               <button
                 type="button"
-                className="rounded-full border border-line bg-card px-4 py-1.5 text-xs text-ink-2 transition-colors hover:border-brand hover:text-brand"
+                className="rounded-md border border-line-strong bg-card/80 px-3 py-1.5 text-xs text-ink-2 transition-colors hover:border-brand/60 hover:text-brand-hi"
                 onClick={() => void send(t('请提炼这个页面的关键要点，用列表呈现'))}
               >
                 {t('提炼关键要点')}
@@ -145,10 +145,10 @@ export default function PageChat() {
               <div
                 className={
                   m.role === 'user'
-                    ? 'max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand px-3 py-2 text-xs leading-relaxed text-white'
+                    ? 'max-w-[85%] whitespace-pre-wrap rounded-md rounded-br-sm bg-brand px-3 py-2 text-xs leading-relaxed text-paper'
                     : m.error
-                      ? 'max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-600'
-                      : 'max-w-[92%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-fill px-3 py-2 text-xs leading-relaxed text-ink'
+                      ? 'max-w-[92%] whitespace-pre-wrap rounded-md rounded-bl-sm border border-danger/40 bg-danger/10 px-3 py-2 text-xs leading-relaxed text-danger'
+                      : 'max-w-[92%] whitespace-pre-wrap rounded-md rounded-bl-sm bg-fill/60 px-3 py-2 text-xs leading-relaxed text-ink'
                 }
               >
                 {m.content || (
@@ -202,7 +202,7 @@ export default function PageChat() {
               title={t('发送')}
               disabled={!input.trim()}
               onClick={() => void send(input)}
-              className="rounded-lg bg-brand p-2 text-white transition-opacity disabled:opacity-40"
+              className="rounded-md bg-brand p-2 text-paper transition-opacity disabled:opacity-40"
             >
               <Send size={15} />
             </button>

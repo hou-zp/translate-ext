@@ -50,7 +50,7 @@ export function EpubView(props: { file: File; config: AppConfig }) {
   return (
     <div className="flex gap-5">
       <aside className="w-56 shrink-0">
-        <div className="sticky top-6 max-h-[calc(100vh-60px)] overflow-auto rounded-xl border border-line/70 bg-card p-3 shadow-card">
+        <div className="sticky top-6 max-h-[calc(100vh-60px)] overflow-auto rounded-md border border-line bg-card/80 p-3 shadow-card">
           <h2 className="mb-2 line-clamp-2 px-2 text-sm font-semibold text-ink">
             {book.title}
           </h2>
@@ -60,7 +60,7 @@ export function EpubView(props: { file: File; config: AppConfig }) {
               type="button"
               onClick={() => setChapterIdx(i)}
               className={`block w-full truncate rounded-lg px-2 py-1.5 text-left text-xs ${
-                i === chapterIdx ? 'bg-brand-soft text-brand' : 'text-ink-2 hover:bg-fill'
+                i === chapterIdx ? 'bg-brand-soft text-brand-hi' : 'text-ink-2 hover:bg-fill'
               }`}
             >
               {ch.title}
@@ -69,7 +69,7 @@ export function EpubView(props: { file: File; config: AppConfig }) {
         </div>
       </aside>
       <div className="min-w-0 flex-1">
-        <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+        <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-card/80 px-4 py-3 shadow-card">
           <span className="text-sm text-ink-2">
             {book.chapters.length} {t('章')} · {allItems.length} {t('段')}
           </span>
@@ -114,7 +114,7 @@ export function TxtView(props: { file: File; config: AppConfig }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-card/80 px-4 py-3 shadow-card">
         <span className="text-sm text-ink-2">
           {items.length} {t('段')}
         </span>
@@ -189,7 +189,7 @@ export function DocxView(props: { file: File; config: AppConfig }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-card/80 px-4 py-3 shadow-card">
         <span className="text-sm text-ink-2">
           {items.length} {t('段')}
         </span>
@@ -213,7 +213,7 @@ export function DocxView(props: { file: File; config: AppConfig }) {
       </div>
       <div className="space-y-3">
         {blocks.map((b, i) => (
-          <div key={i} className="rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+          <div key={i} className="rounded-md border border-line bg-card/80 px-4 py-3 shadow-card">
             <p className={`text-ink-2 ${HEADING_CLS[b.tag] ?? 'text-sm'}`}>{b.text}</p>
             <p className={`mt-1 text-ink ${HEADING_CLS[b.tag] ?? 'text-sm'}`}>
               {results[String(i)] ?? <span className="text-ink-3">{t('待翻译')}…</span>}
@@ -254,7 +254,7 @@ export function AssView(props: { file: File; config: AppConfig }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-card/80 px-4 py-3 shadow-card">
         <span className="text-sm text-ink-2">
           {ass.cues.length} {t('条字幕')}
         </span>
@@ -278,7 +278,7 @@ export function AssView(props: { file: File; config: AppConfig }) {
       </div>
       <div className="space-y-2">
         {ass.cues.map((cue, i) => (
-          <div key={i} className="rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+          <div key={i} className="rounded-md border border-line bg-card/80 px-4 py-3 shadow-card">
             <div className="mb-1 text-xs text-ink-3">
               #{i + 1} · {cue.start} → {cue.end}
             </div>
@@ -322,7 +322,7 @@ export function SrtView(props: { file: File; config: AppConfig }) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+      <div className="sticky top-0 z-10 mb-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-card/80 px-4 py-3 shadow-card">
         <span className="text-sm text-ink-2">
           {cues.length} {t('条字幕')}
         </span>
@@ -346,7 +346,7 @@ export function SrtView(props: { file: File; config: AppConfig }) {
       </div>
       <div className="space-y-2">
         {cues.map((cue, i) => (
-          <div key={i} className="rounded-xl border border-line/70 bg-card px-4 py-3 shadow-card">
+          <div key={i} className="rounded-md border border-line bg-card/80 px-4 py-3 shadow-card">
             <div className="mb-1 text-xs text-ink-3">
               #{i + 1} · {cue.time}
             </div>

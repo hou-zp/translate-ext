@@ -1,7 +1,7 @@
 import type { InputHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
 export const inputCls =
-  'w-full rounded-lg border border-line bg-card px-3 py-2 text-sm text-ink placeholder:text-ink-3 outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:opacity-50';
+  'w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-3/70 outline-none transition-colors focus:border-brand/60 disabled:opacity-50';
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   const { className, ...rest } = props;

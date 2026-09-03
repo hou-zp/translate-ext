@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { browser } from 'wxt/browser';
 import {
   BookMarked,
   Database,
@@ -75,17 +76,24 @@ export default function App() {
   const current = ALL_SECTIONS.find((s) => s.id === section)!;
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl gap-10 px-6 py-10">
-      <aside className="w-48 shrink-0">
+    <div className="relative mx-auto flex min-h-screen max-w-5xl gap-10 px-6 py-10">
+      <div className="grid-bg pointer-events-none fixed inset-0" aria-hidden="true" />
+      <div className="noise-overlay" aria-hidden="true" />
+      <aside className="relative w-52 shrink-0">
         <div className="sticky top-10">
           <div className="mb-7 flex items-center gap-2.5 px-1">
-            <img src="/icon/32.png" alt="" className="h-6 w-6" />
-            <h1 className="text-base font-bold text-ink">AI 沉浸翻译</h1>
+            <img src="/icon/32.png" alt="" className="h-7 w-7" />
+            <span className="leading-none">
+              <span className="block font-display text-[15px] font-black tracking-wide text-ink">AI 沉浸翻译</span>
+              <span className="mt-1 block font-mono text-[9px] uppercase tracking-[0.22em] text-ink-3">
+                options · v{browser.runtime.getManifest().version}
+              </span>
+            </span>
           </div>
           <nav>
             {GROUPS.map((g) => (
               <div key={g.label} className="mb-5">
-                <div className="mb-1.5 px-3 text-[11px] font-medium tracking-wide text-ink-3">
+                <div className="mb-1.5 px-3 font-mono text-[9px] uppercase tracking-[0.2em] text-ink-3">
                   {g.label}
                 </div>
                 <div className="space-y-0.5">
@@ -100,14 +108,15 @@ export default function App() {
                           setSection(s.id);
                           location.hash = s.id;
                         }}
-                        className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-150 ${
+                        className={`flex w-full items-center gap-2.5 rounded-md px-3 py-1.5 text-left text-[12.5px] transition-all duration-150 ${
                           active
-                            ? 'bg-brand-soft font-medium text-brand'
-                            : 'text-ink-2 hover:bg-fill hover:text-ink'
+                            ? 'bg-brand-soft text-brand-hi'
+                            : 'text-ink-3 hover:bg-fill/50 hover:text-ink-2'
                         }`}
                       >
-                        <IconCmp className={`h-4 w-4 ${active ? '' : 'text-ink-3'}`} />
+                        <IconCmp className={`h-4 w-4 ${active ? '' : 'opacity-70'}`} />
                         {s.label}
+                        {active && <span className="ml-auto h-1 w-1 rounded-full bg-brand-hi" />}
                       </button>
                     );
                   })}
@@ -117,10 +126,13 @@ export default function App() {
           </nav>
         </div>
       </aside>
-      <main className="min-w-0 flex-1">
+      <main className="relative min-w-0 flex-1">
         <header className="mb-6 animate-fade-in" key={`head-${section}`}>
-          <h1 className="text-xl font-bold text-ink">{current.label}</h1>
-          <p className="mt-1 text-sm text-ink-3">{current.desc}</p>
+          <p className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.26em] text-brand-hi">
+            {section}
+          </p>
+          <h1 className="font-display text-[22px] font-bold tracking-wide text-ink">{current.label}</h1>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-ink-3">{current.desc}</p>
         </header>
         <div className="animate-slide-up" key={section}>
           {section === 'general' && <GeneralSection {...panelProps} />}

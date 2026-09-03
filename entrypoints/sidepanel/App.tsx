@@ -71,10 +71,10 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col">
-      <div className="border-b border-line bg-card px-4 py-3 shadow-card">
+      <div className="border-b border-line bg-card/80 px-4 py-3 shadow-card">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-medium text-ink-3">{t('当前页面')}</span>
-          <span className="max-w-[60%] truncate text-xs text-ink-3" title={pageTitle}>
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-ink-3">{t('当前页面')}</span>
+          <span className="max-w-[60%] truncate text-xs text-ink-2" title={pageTitle}>
             {pageTitle}
           </span>
         </div>
@@ -96,13 +96,13 @@ export default function App() {
         </Button>
         {state?.translated && progress !== null && progress < 100 && (
           <div className="mt-2 flex items-center gap-2 animate-fade-in">
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-fill">
+            <div className="h-1 flex-1 overflow-hidden rounded-full bg-fill-2">
               <div
                 className="h-full rounded-full bg-brand transition-[width] duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="text-[11px] tabular-nums text-ink-3">
+            <span className="font-mono text-[10.5px] tabular-nums text-ink-3">
               {state.done}/{state.total}
             </span>
           </div>

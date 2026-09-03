@@ -54,7 +54,7 @@ export function ExpertsSection({ config, update }: PanelProps) {
               <span className="flex gap-2 text-xs">
                 <button
                   type="button"
-                  className="text-brand hover:underline"
+                  className="text-brand-hi hover:underline"
                   onClick={() => setEditing({ ...e })}
                 >
                   {t('编辑')}
@@ -80,7 +80,7 @@ export function ExpertsSection({ config, update }: PanelProps) {
         </div>
         <button
           type="button"
-          className="mt-3 flex items-center gap-1 rounded-lg border border-dashed border-line-strong px-4 py-2 text-sm text-ink-3 transition-colors hover:border-brand hover:text-brand"
+          className="mt-3 flex items-center gap-1 rounded-lg border border-dashed border-line-strong px-4 py-2 text-sm text-ink-3 transition-colors hover:border-brand/60 hover:text-brand-hi"
           onClick={() =>
             setEditing({
               id: `custom-${Date.now()}`,
@@ -95,7 +95,7 @@ export function ExpertsSection({ config, update }: PanelProps) {
         </button>
 
         {editing && (
-          <div className="mt-4 rounded-xl border border-brand/30 bg-brand-soft/40 p-4 animate-collapse-in">
+          <div className="mt-4 rounded-md border border-brand/40 bg-brand-soft p-4 animate-collapse-in">
             <Field label={t('专家名称')}>
               <Input
                 value={editing.name}
