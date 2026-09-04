@@ -656,7 +656,7 @@ export default function BrowserMock({
                 <Logo className="h-6 w-6 text-bone" />
                 <div className="leading-tight">
                   <p className="font-display text-[13.5px] font-bold text-bone">AI 沉浸翻译</p>
-                  <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-mute">open source · v1.2.0</p>
+                  <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-mute">open source · v1.2.1</p>
                 </div>
                 <button
                   role="switch"

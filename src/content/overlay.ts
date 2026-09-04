@@ -11,26 +11,20 @@ const FONT_STACK =
   "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif";
 
 const CHROME_CSS = `
+/* ink-and-cinnabar theme, matching the extension pages */
 :host {
   all: initial;
-  --txe-bg: #ffffff;
-  --txe-bg-2: #f4f6fa;
-  --txe-text: #10192b;
-  --txe-text-2: #55617a;
-  --txe-line: rgba(16, 25, 43, 0.12);
-  --txe-brand: #3b82f6;
-  --txe-brand-strong: #2563eb;
-  --txe-danger: #dc2626;
-  --txe-success: #10b981;
-}
-@media (prefers-color-scheme: dark) {
-  :host {
-    --txe-bg: #161e30;
-    --txe-bg-2: #1d2740;
-    --txe-text: #e8edf6;
-    --txe-text-2: #a3aec5;
-    --txe-line: rgba(255, 255, 255, 0.14);
-  }
+  --txe-bg: #141920;
+  --txe-bg-2: #1a2028;
+  --txe-text: #e9e4d8;
+  --txe-text-2: #b6b1a6;
+  --txe-text-3: #8c95a0;
+  --txe-line: rgba(233, 228, 216, 0.12);
+  --txe-line-strong: rgba(233, 228, 216, 0.18);
+  --txe-brand: #d5482f;
+  --txe-brand-strong: #ef6a4c;
+  --txe-danger: #ef6a4c;
+  --txe-success: #57a79b;
 }
 *, *::before, *::after { box-sizing: border-box; }
 button { font: inherit; }
@@ -50,7 +44,7 @@ button { font: inherit; }
   display: inline-block;
   width: 0.85em; height: 0.85em;
   vertical-align: -0.08em;
-  border: 2px solid rgba(59, 130, 246, 0.3);
+  border: 2px solid rgba(213, 72, 47, 0.3);
   border-top-color: var(--txe-brand);
   border-radius: 50%;
   animation: txe-spin 0.8s linear infinite;
@@ -60,18 +54,19 @@ button { font: inherit; }
 .txe-sel-trigger {
   position: fixed;
   z-index: 2147483646;
-  width: 28px; height: 28px;
+  width: 30px; height: 30px;
   border-radius: 50%;
   background: var(--txe-brand);
-  color: #fff;
+  border: 1px solid rgba(233, 228, 216, 0.25);
+  color: #f5f1e8;
   display: flex; align-items: center; justify-content: center;
-  font: 500 13px/1 ${FONT_STACK};
   cursor: pointer;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 14px rgba(213, 72, 47, 0.45);
   user-select: none;
   animation: txe-pop 0.15s cubic-bezier(0.22, 1, 0.36, 1);
   transition: transform 0.15s ease, background 0.15s ease;
 }
+.txe-sel-trigger svg { width: 18px; height: 18px; }
 .txe-sel-trigger:hover {
   transform: scale(1.1);
   background: var(--txe-brand-strong);
@@ -82,8 +77,8 @@ button { font: inherit; }
   min-width: 260px; max-width: 380px;
   background: var(--txe-bg);
   color: var(--txe-text);
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.3);
   border: 1px solid var(--txe-line);
   font: 400 14px/1.6 ${FONT_STACK};
   overflow: hidden;
@@ -97,9 +92,9 @@ button { font: inherit; }
   border-bottom: 1px solid var(--txe-line);
   font-size: 12px; color: var(--txe-text-2);
 }
-.txe-sel-lang { opacity: 0.75; font-size: 11px; margin-left: 6px; }
+.txe-sel-lang { opacity: 0.75; font-size: 11px; margin-left: 6px; font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
 .txe-sel-close {
-  cursor: pointer; padding: 2px 6px; border-radius: 6px;
+  cursor: pointer; padding: 2px 6px; border-radius: 4px;
   transition: background 0.15s ease;
 }
 .txe-sel-close:hover { background: var(--txe-line); }
@@ -116,7 +111,7 @@ button { font: inherit; }
 }
 .txe-sel-btn {
   font-size: 12px; color: var(--txe-text-2);
-  border: 1px solid var(--txe-line); border-radius: 8px;
+  border: 1px solid var(--txe-line); border-radius: 6px;
   padding: 3px 10px; cursor: pointer; background: transparent;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -124,39 +119,63 @@ button { font: inherit; }
 .txe-sel-btn:disabled { opacity: 0.6; cursor: default; }
 
 /* ---- float ball ---- */
+@keyframes txe-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 0.25; transform: scale(1.12); }
+}
 .txe-ball {
   position: fixed;
   right: 10px;
   z-index: 2147483645;
-  width: 40px; height: 40px;
+  width: 44px; height: 44px;
   border-radius: 50%;
-  background: var(--txe-bg);
-  border: 1px solid var(--txe-line);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
+  background: #141920;
+  border: 1px solid rgba(213, 72, 47, 0.55);
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.7);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  color: var(--txe-brand);
-  font: 600 18px/1 ${FONT_STACK};
-  opacity: 0.6;
-  transition: opacity 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  opacity: 0.92;
+  transition: opacity 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
   user-select: none;
+  animation: txe-pop 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.txe-ball::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1px solid rgba(213, 72, 47, 0.35);
+  animation: txe-pulse 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.txe-ball svg { width: 62%; height: 62%; transition: transform 0.2s ease; }
 .txe-ball:hover {
   opacity: 1;
-  transform: scale(1.08);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transform: scale(1.06);
+  border-color: rgba(213, 72, 47, 0.9);
 }
+.txe-ball:hover svg { transform: rotate(6deg); }
 .txe-ball.txe-dragging { opacity: 0.8; transform: scale(1.05); }
+.txe-ball-dot {
+  position: absolute;
+  top: 1px; right: 1px;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--txe-success);
+  border: 2px solid #141920;
+  display: none;
+}
+.txe-ball.txe-active .txe-ball-dot { display: block; }
 .txe-ball-frame {
   position: fixed;
-  right: 58px;
+  right: 62px;
   z-index: 2147483645;
   width: 372px; height: 544px;
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   background: var(--txe-bg);
-  border: 1px solid var(--txe-line);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--txe-line-strong);
+  box-shadow: 0 28px 60px -18px rgba(0, 0, 0, 0.85);
   animation: txe-rise 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .txe-ball-frame iframe {
@@ -177,7 +196,7 @@ button { font: inherit; }
   background: var(--txe-bg);
   color: var(--txe-text-2);
   border: 1px solid var(--txe-line);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   font: 500 12px/1 ${FONT_STACK};
   animation: txe-rise 0.2s cubic-bezier(0.22, 1, 0.36, 1);
   transition: opacity 0.25s ease, transform 0.25s ease;

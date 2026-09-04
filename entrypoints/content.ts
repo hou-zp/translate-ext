@@ -105,11 +105,13 @@ export default defineContentScript({
       ping: () => ({ pong: true as const }),
       translatePage: async () => {
         const translated = await controller.toggle();
+        ball?.setActive(controller.active);
         if (translated) trackProgress();
         return { translated };
       },
       restorePage: () => {
         controller.restore();
+        ball?.setActive(false);
       },
       getPageState: () => ({
         translated: controller.active,
@@ -132,7 +134,10 @@ export default defineContentScript({
 
     // Auto-translate sites from the "always translate" list.
     if (mode === 'always') {
-      void controller.start().then(trackProgress);
+      void controller.start().then(() => {
+        ball?.setActive(controller.active);
+        trackProgress();
+      });
     }
   },
 });

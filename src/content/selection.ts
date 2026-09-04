@@ -5,6 +5,7 @@ import { t } from '../core/i18n';
 import { LANGS } from '../core/langs';
 import { sendToBackground } from '../core/messaging';
 import { PROVIDERS } from '../providers';
+import { logoElement } from './logo';
 import { fadeOutRemove, overlayRoot, pathHasClass } from './overlay';
 import { stripMarkers } from './walker';
 
@@ -85,7 +86,7 @@ export class SelectionBubble {
     this.currentText = text;
     const trigger = document.createElement('div');
     trigger.className = 'txe-sel-trigger';
-    trigger.textContent = '译';
+    trigger.appendChild(logoElement());
     trigger.addEventListener('mousedown', (e) => e.stopPropagation());
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();

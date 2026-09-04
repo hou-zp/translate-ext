@@ -1,6 +1,7 @@
 import { browser } from 'wxt/browser';
 import type { AppConfig } from '../core/config';
 import type { PageTranslationController } from './controller';
+import { logoElement } from './logo';
 import { fadeOutRemove, overlayRoot, pathHasClass } from './overlay';
 
 const PANEL_HEIGHT = 544;
@@ -16,6 +17,7 @@ export class FloatBall {
   private panel: HTMLElement | null = null;
   private topPercent = 38;
   private dragging = false;
+  private active = false;
 
   constructor(
     private controller: PageTranslationController,
@@ -37,10 +39,21 @@ export class FloatBall {
     else if (!shouldShow && this.ball) this.unmount();
   }
 
+  /** Reflect full-page translation state on the ball (jade dot). */
+  setActive(active: boolean): void {
+    this.active = active;
+    this.ball?.classList.toggle('txe-active', active);
+  }
+
   private mount(): void {
     const ball = document.createElement('div');
     ball.className = 'txe-ball';
-    ball.textContent = '译';
+    ball.appendChild(logoElement());
+    // jade dot shown while a full-page translation is active
+    const dot = document.createElement('span');
+    dot.className = 'txe-ball-dot';
+    ball.appendChild(dot);
+    ball.classList.toggle('txe-active', this.active);
     ball.style.top = `${this.topPercent}%`;
     ball.title = 'AI 翻译';
 

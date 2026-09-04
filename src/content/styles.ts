@@ -25,8 +25,8 @@ ${STYLE_RULES}
   width: 0.85em; height: 0.85em;
   margin-left: 0.4em;
   vertical-align: -0.08em;
-  border: 2px solid rgba(59, 130, 246, 0.3);
-  border-top-color: rgba(59, 130, 246, 0.95);
+  border: 2px solid rgba(213, 72, 47, 0.3);
+  border-top-color: rgba(213, 72, 47, 0.95);
   border-radius: 50%;
   animation: txe-spin 0.8s linear infinite;
 }
@@ -35,31 +35,31 @@ ${STYLE_RULES}
 .txe-error {
   display: inline-block;
   margin-left: 0.4em;
-  color: #dc2626;
+  color: #ef6a4c;
   font-size: 0.85em;
   cursor: pointer;
-  border-bottom: 1px dotted #dc2626;
+  border-bottom: 1px dotted #ef6a4c;
 }
 .txe-orig-holder { display: none !important; }
 
 /* hover-translate: brief highlight on the paragraph being translated */
 .txe-hover-hint {
-  background: rgba(59, 130, 246, 0.08) !important;
+  background: rgba(213, 72, 47, 0.08) !important;
   border-radius: 2px;
   transition: background 0.2s ease;
 }
 
 /* input-translate feedback */
 .txe-input-busy {
-  outline: 2px solid rgba(59, 130, 246, 0.55) !important;
+  outline: 2px solid rgba(213, 72, 47, 0.55) !important;
   outline-offset: 1px;
   animation: txe-input-pulse 1s ease-in-out infinite;
 }
 @keyframes txe-input-pulse {
-  50% { outline-color: rgba(59, 130, 246, 0.15); }
+  50% { outline-color: rgba(213, 72, 47, 0.15); }
 }
 .txe-input-error {
-  outline: 2px solid rgba(220, 38, 38, 0.7) !important;
+  outline: 2px solid rgba(239, 106, 76, 0.7) !important;
   outline-offset: 1px;
   animation: txe-input-shake 0.4s ease;
 }

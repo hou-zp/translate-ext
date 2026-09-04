@@ -156,7 +156,7 @@ export function Footer() {
               <Logo className="h-9 w-9 text-bone" />
               <div>
                 <p className="font-display text-[18px] font-black text-bone">AI 沉浸翻译 · translate-ext</p>
-                <p className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-mute">open source · v1.2.0</p>
+                <p className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-mute">open source · v1.2.1</p>
               </div>
             </div>
             <p className="mt-4 max-w-sm text-[12.5px] leading-relaxed text-mute">

@@ -200,7 +200,7 @@ export default function PdfView(props: { file: File; config: AppConfig }) {
 body{font:15px/1.75 system-ui,-apple-system,"Segoe UI",sans-serif;max-width:800px;margin:32px auto;padding:0 20px;color:#111}
 h2{font-size:13px;color:#999;border-bottom:1px solid #eee;padding-bottom:4px;margin:28px 0 12px}
 .orig{color:#666;margin:10px 0 2px}
-.trans{color:#111;margin:0 0 14px;border-left:3px solid #3b82f6;padding-left:10px}
+.trans{color:#111;margin:0 0 14px;border-left:3px solid #d5482f;padding-left:10px}
 @media print{.orig{page-break-inside:avoid}.trans{page-break-inside:avoid}}
 </style></head><body>
 <h1 style="font-size:18px">${esc(props.file.name)} · 双语对照</h1>

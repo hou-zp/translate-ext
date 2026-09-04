@@ -125,7 +125,7 @@ async function translateOne(cfg: AppConfig, o: MangaOverlay, mySession: number):
     if (!active || mySession !== session) return;
     const msg = err instanceof Error ? err.message : String(err);
     o.box.textContent = `${t('翻译失败')}: ${msg}`;
-    o.box.style.color = '#dc2626';
+    o.box.style.color = '#ef6a4c';
   }
 }
 
@@ -210,7 +210,7 @@ export async function fillSingleImage(srcUrl: string, cfg: AppConfig): Promise<v
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     box.textContent = `${t('翻译失败')}: ${msg}`;
-    box.style.color = '#dc2626';
+    box.style.color = '#ef6a4c';
     setTimeout(() => box.remove(), 6000);
   }
 }

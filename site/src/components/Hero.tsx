@@ -33,7 +33,7 @@ export function Nav() {
           ))}
         </nav>
         <span className="ml-auto hidden rounded-full border border-white/10 px-2.5 py-1 font-mono text-[10px] text-mute md:ml-0 md:block">
-          v1.2.0 · open source
+          v1.2.1 · open source
         </span>
         <button
           onClick={() => window.dispatchEvent(new Event("ir:open-popup"))}

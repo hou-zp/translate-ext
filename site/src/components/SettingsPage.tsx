@@ -423,7 +423,7 @@ export default function SettingsPage({
           <Logo className="h-6 w-6 text-bone" />
           <div className="leading-none">
             <p className="font-display text-[12.5px] font-black text-bone">设置</p>
-            <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-mute">options · v1.2.0</p>
+            <p className="font-mono text-[8.5px] uppercase tracking-[0.18em] text-mute">options · v1.2.1</p>
           </div>
         </div>
         <ul className="space-y-0.5">
@@ -914,18 +914,18 @@ export default function SettingsPage({
             <Logo className="h-12 w-12 text-bone" />
             <div>
               <p className="font-display text-[17px] font-black text-bone">AI 沉浸翻译 · translate-ext</p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">open source · v1.2.0 · manifest v3</p>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-mute">open source · v1.2.1 · manifest v3</p>
             </div>
           </div>
           <Row label="检查更新">
             <span className="flex items-center gap-2">
-              {upd === "done" && <span className="font-mono text-[10.5px] text-[#57a79b]">已是最新 v1.2.0</span>}
+              {upd === "done" && <span className="font-mono text-[10.5px] text-[#57a79b]">已是最新 v1.2.1</span>}
               <button
                 onClick={() => {
                   setUpd("run");
                   window.setTimeout(() => {
                     setUpd("done");
-                    pushLog("检查更新：已是最新 v1.2.0", "ok");
+                    pushLog("检查更新：已是最新 v1.2.1", "ok");
                   }, 1300);
                 }}
                 disabled={upd === "run"}
